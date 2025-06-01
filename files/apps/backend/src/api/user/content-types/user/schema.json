@@ -1,0 +1,13 @@
+{
+  "collectionName": "users",
+  "info": { "singularName": "user", "pluralName": "users", "displayName": "User" },
+  "options": { "draftAndPublish": false },
+  "attributes": {
+    "email": { "type": "email", "required": true, "unique": true },
+    "name": { "type": "string", "required": true },
+    "phone": { "type": "string" },
+    "address": { "type": "string" },
+    "subscriptionStatus": { "type": "enumeration", "enum": ["free", "premium"], "default": "free" },
+    "premiumExpiry": { "type": "datetime" }
+  }
+}

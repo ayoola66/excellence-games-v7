@@ -1,0 +1,19 @@
+{
+  "collectionName": "admin_users",
+  "info": {
+    "singularName": "admin-user",
+    "pluralName": "admin-users",
+    "displayName": "Admin User"
+  },
+  "options": { "draftAndPublish": false },
+  "attributes": {
+    "email": { "type": "email", "required": true, "unique": true },
+    "name": { "type": "string", "required": true },
+    "role": {
+      "type": "enumeration",
+      "enum": ["superadmin", "devadmin", "shopadmin", "contentadmin", "customeradmin"],
+      "required": true
+    },
+    "password": { "type": "password", "required": true }
+  }
+}

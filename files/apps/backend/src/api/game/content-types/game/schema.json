@@ -1,0 +1,13 @@
+{
+  "collectionName": "games",
+  "info": { "singularName": "game", "pluralName": "games", "displayName": "Game" },
+  "options": { "draftAndPublish": false },
+  "attributes": {
+    "name": { "type": "string", "required": true },
+    "description": { "type": "text" },
+    "type": { "type": "enumeration", "enum": ["straight", "nested"], "required": true },
+    "status": { "type": "enumeration", "enum": ["free", "premium"], "default": "free" },
+    "thumbnail": { "type": "media", "multiple": false },
+    "totalQuestions": { "type": "integer" }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "collectionName": "questions",
+  "info": {
+    "name": "Question"
+  },
+  "attributes": {
+    "question": { "type": "text", "required": true },
+    "options": { "type": "json", "required": true },
+    "correctAnswer": { "type": "string", "required": true },
+    "difficulty": { "type": "enumeration", "enum": ["easy", "medium", "hard"] },
+    "explanation": { "type": "text" },
+    "tags": { "type": "json" },
+    "category": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::category.category"
+    },
+    "game": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::game.game"
+    }
+  }
+}
