@@ -1,0 +1,7 @@
+{
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "@types/node": "^22.15.29",
+    "concurrently": "^9.1.2"
+  }
+}
