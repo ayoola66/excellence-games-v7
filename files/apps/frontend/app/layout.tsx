@@ -6,8 +6,9 @@ import dynamic from 'next/dynamic'
 
 const inter = Inter({ subsets: ['latin'] })
 
-const Toaster = dynamic(
-  () => import('react-hot-toast').then((mod) => mod.Toaster),
+// Dynamically import client-only Toaster wrapper
+const ClientToaster = dynamic(
+  () => import('@/components/ClientToaster'),
   { ssr: false }
 )
 
@@ -32,14 +33,10 @@ export default function RootLayout({
           <footer className="w-full py-6 bg-blue-900 text-white text-center text-sm shadow-inner">
             <span className="font-semibold tracking-wide">Elite Games</span> &copy; {new Date().getFullYear()} &middot; Made with pride in the United Kingdom 🇬🇧
           </footer>
-          <Toaster 
+          <ClientToaster
             position="top-right"
             toastOptions={{
               duration: 4000,
-              style: {
-                background: '#363636',
-                color: '#fff',
-              },
             }}
           />
         </AuthProvider>
