@@ -9,10 +9,21 @@ const { createCoreRouter } = require('@strapi/strapi').factories;
 module.exports = createCoreRouter('api::game.game', {
   config: {
     find: {
-      middlewares: ['api::game.populate'],
+      auth: false,
+      middlewares: [],
     },
     findOne: {
-      middlewares: ['api::game.populate'],
+      auth: false,
+      middlewares: [],
+    },
+    create: {
+      auth: false,
+    },
+    update: {
+      auth: false,
+    },
+    delete: {
+      auth: false,
     },
   },
 }); 
