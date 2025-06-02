@@ -45,8 +45,14 @@ export const strapiApi = {
   // ============= GAME OPERATIONS =============
   
   async getGames() {
-    const response = await apiClient.get('/api/games?populate=thumbnail,categories.questions')
-    return response.data
+    try {
+      const response = await apiClient.get('/api/games?populate=thumbnail,categories')
+      return response.data
+    } catch (error: any) {
+      console.error('Error fetching games:', error)
+      // Return empty structure if games can't be fetched
+      return { data: [] }
+    }
   },
 
   async getGame(id: string) {
@@ -311,8 +317,16 @@ export const strapiApi = {
   // ============= MUSIC OPERATIONS =============
 
   async getMusicTracks() {
-    const response = await apiClient.get('/api/background-musics?populate=*')
-    return response.data
+    try {
+      const response = await apiClient.get('/api/background-music?populate=*')
+      return response.data
+    } catch (error: any) {
+      // If endpoint doesn't exist, return empty data structure
+      if (error.response?.status === 404) {
+        return { data: [] }
+      }
+      throw error
+    }
   },
 
   async uploadMusicTrack(trackData: {
@@ -329,7 +343,7 @@ export const strapiApi = {
     }))
     formData.append('files.audioFile', trackData.audioFile)
 
-    const response = await apiClient.post('/api/background-musics', formData, {
+    const response = await apiClient.post('/api/background-music', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -338,7 +352,7 @@ export const strapiApi = {
   },
 
   async deleteMusicTrack(id: string) {
-    const response = await apiClient.delete(`/api/background-musics/${id}`)
+    const response = await apiClient.delete(`/api/background-music/${id}`)
     return response.data
   },
 

@@ -129,39 +129,46 @@ module.exports = createCoreController('api::game.game', ({ strapi }) => ({
 
   // Get games with user access control
   async find(ctx) {
-    const { user } = ctx.state;
-    const isAuthenticated = !!user;
-    const isPremium = user?.subscriptionStatus === 'premium';
+    console.log('🎯 Custom game find method called');
+    try {
+      const { user } = ctx.state;
+      const isAuthenticated = !!user;
+      const isPremium = user?.subscriptionStatus === 'premium';
 
-    // Build query based on user access
-    const query = {
-      filters: {
-        isActive: true,
-        ...(isAuthenticated && !isPremium ? { status: 'free' } : {}),
-      },
-      populate: {
-        thumbnail: true,
-        categories: {
-          populate: {
-            questions: {
-              count: true,
-            },
-          },
+      // Build query based on user access - simplified for troubleshooting
+      const query = {
+        populate: {
+          thumbnail: true,
+          categories: true,
         },
-      },
-      sort: ['sortOrder:asc', 'createdAt:desc'],
-    };
+        sort: ['sortOrder:asc', 'createdAt:desc'],
+      };
 
-    const { data, meta } = await strapi.entityService.findMany('api::game.game', query);
+      console.log('🔍 Executing find query:', JSON.stringify(query, null, 2));
+      const { data, meta } = await strapi.entityService.findMany('api::game.game', query);
+      console.log('📊 Found games:', data?.length || 0);
 
-    // Add additional game info
-    const gamesWithInfo = data.map(game => ({
-      ...game,
-      totalQuestions: game.categories?.reduce((total, cat) => total + (cat.questions?.length || 0), 0) || 0,
-      accessType: isPremium ? 'full' : game.status === 'free' ? 'free' : 'locked',
-    }));
+      // Add additional game info safely
+      const gamesWithInfo = (data || []).map(game => {
+        const categories = game.categories || [];
+        const totalQuestions = categories.reduce((total, cat) => {
+          const questions = cat.questions || [];
+          return total + (Array.isArray(questions) ? questions.length : 0);
+        }, 0);
 
-    return { data: gamesWithInfo, meta };
+        return {
+          ...game,
+          totalQuestions,
+          accessType: isPremium ? 'full' : game.status === 'free' ? 'free' : 'locked',
+        };
+      });
+
+      console.log('✅ Returning games with info:', gamesWithInfo.length);
+      return { data: gamesWithInfo, meta };
+    } catch (error) {
+      console.error('❌ Error in game find method:', error);
+      ctx.throw(500, 'Failed to fetch games');
+    }
   },
 
   // Get specific game with questions
