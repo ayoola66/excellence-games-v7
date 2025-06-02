@@ -8,7 +8,7 @@
     "description": "Categories for straight trivia and nested game cards"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {

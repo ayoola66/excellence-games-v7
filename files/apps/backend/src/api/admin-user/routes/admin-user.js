@@ -49,25 +49,5 @@ module.exports = {
         middlewares: [],
       },
     },
-    {
-      method: 'GET',
-      path: '/admin-users/test',
-      handler: 'admin-user.testAdmins',
-      config: {
-        auth: false,
-        policies: [],
-        middlewares: [],
-      },
-    },
-    {
-      method: 'POST',
-      path: '/admin-users/reset-password',
-      handler: 'admin-user.resetPassword',
-      config: {
-        auth: false,
-        policies: [],
-        middlewares: [],
-      },
-    },
   ],
 }; 

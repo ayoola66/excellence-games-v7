@@ -8,7 +8,7 @@
     "description": "Trivia games with straight or nested categories"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {

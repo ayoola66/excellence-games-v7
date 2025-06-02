@@ -455,7 +455,7 @@ export interface ApiCategoryCategory extends Schema.CollectionType {
     singularName: 'category';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     cardNumber: Attribute.Integer;
@@ -476,7 +476,6 @@ export interface ApiCategoryCategory extends Schema.CollectionType {
     >;
     isActive: Attribute.Boolean & Attribute.DefaultTo<true>;
     name: Attribute.String & Attribute.Required;
-    publishedAt: Attribute.DateTime;
     questionCount: Attribute.Integer & Attribute.DefaultTo<0>;
     questions: Attribute.Relation<
       'api::category.category',
@@ -505,7 +504,7 @@ export interface ApiGameGame extends Schema.CollectionType {
     singularName: 'game';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     categories: Attribute.Relation<
@@ -519,7 +518,6 @@ export interface ApiGameGame extends Schema.CollectionType {
     description: Attribute.Text;
     isActive: Attribute.Boolean & Attribute.DefaultTo<true>;
     name: Attribute.String & Attribute.Required & Attribute.Unique;
-    publishedAt: Attribute.DateTime;
     questions: Attribute.Relation<
       'api::game.game',
       'oneToMany',
