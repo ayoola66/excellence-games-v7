@@ -57,8 +57,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Check user session
       if (token) {
         try {
-          // In a real app, we'd verify the token with the backend
-          // For now, we'll check if the token exists and is valid
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users/me`, {
             headers: { Authorization: `Bearer ${token}` }
           })
@@ -67,14 +65,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const userData = await response.json()
             setUser(userData)
           } else {
-            // Token is invalid, clear it
-            Cookies.remove('auth-token')
-            localStorage.removeItem('auth-token')
+            clearUserTokens()
           }
         } catch (error) {
-          // Backend not available, clear token
-          Cookies.remove('auth-token')
-          localStorage.removeItem('auth-token')
+          console.error('Failed to verify user session:', error)
+          clearUserTokens()
         }
       }
 
@@ -84,21 +79,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const response = await strapiApi.verifyAdminSession(adminToken)
           setAdmin(response.data.admin)
         } catch (error) {
-          // Clear invalid admin token
-          Cookies.remove('admin-token')
-          localStorage.removeItem('admin-token')
+          console.error('Failed to verify admin session:', error)
+          clearAdminTokens()
         }
       }
     } catch (error) {
       console.error('Session check failed:', error)
-      // Clear all tokens on error
-      Cookies.remove('auth-token')
-      Cookies.remove('admin-token')
-      localStorage.removeItem('auth-token')
-      localStorage.removeItem('admin-token')
+      clearAllTokens()
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const clearUserTokens = () => {
+    Cookies.remove('auth-token')
+    setUser(null)
+  }
+
+  const clearAdminTokens = () => {
+    Cookies.remove('admin-token')
+    setAdmin(null)
+  }
+
+  const clearAllTokens = () => {
+    clearUserTokens()
+    clearAdminTokens()
   }
 
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -106,9 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await strapiApi.login(email, password)
       const { jwt, user: userData } = response
 
-      // Set token and user data
       Cookies.set('auth-token', jwt, { expires: 7 })
-      localStorage.setItem('auth-token', jwt)
       setUser(userData)
 
       toast.success(`Welcome back, ${userData.fullName || userData.username}!`)
@@ -125,88 +128,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await strapiApi.adminLogin(email, password)
       const { token, admin: adminData } = response.data
 
-      Cookies.set('admin-token', token, { expires: 1 }) // 1 day expiry
-      localStorage.setItem('admin-token', token)
+      Cookies.set('admin-token', token, { expires: 1 })
       setAdmin(adminData)
 
       toast.success(`Welcome, ${adminData.fullName}!`)
       return true
     } catch (error: any) {
-      // Fallback to mock admin authentication for demo purposes
-      console.log('Backend admin auth failed, using mock authentication')
-      
-      const mockAdmins = {
-        'superadmin@elitegames.com': {
-          password: 'SuperAdmin2024!',
-          admin: {
-            id: '1',
-            email: 'superadmin@elitegames.com',
-            fullName: 'Super Administrator',
-            adminType: 'SA' as const,
-            badge: 'SA',
-            permissions: ['all']
-          }
-        },
-        'devadmin@elitegames.com': {
-          password: 'DevAdmin2024!',
-          admin: {
-            id: '2', 
-            email: 'devadmin@elitegames.com',
-            fullName: 'Development Administrator',
-            adminType: 'DEV' as const,
-            badge: 'DEV',
-            permissions: ['games', 'users', 'analytics']
-          }
-        },
-        'contentadmin@elitegames.com': {
-          password: 'ContentAdmin2024!',
-          admin: {
-            id: '3',
-            email: 'contentadmin@elitegames.com', 
-            fullName: 'Content Administrator',
-            adminType: 'CT' as const,
-            badge: 'CT',
-            permissions: ['games', 'questions', 'categories']
-          }
-        },
-        'shopadmin@elitegames.com': {
-          password: 'ShopAdmin2024!',
-          admin: {
-            id: '4',
-            email: 'shopadmin@elitegames.com',
-            fullName: 'Shop Administrator', 
-            adminType: 'SH' as const,
-            badge: 'SH',
-            permissions: ['users', 'orders', 'analytics']
-          }
-        },
-        'customeradmin@elitegames.com': {
-          password: 'CustomerAdmin2024!',
-          admin: {
-            id: '5',
-            email: 'customeradmin@elitegames.com',
-            fullName: 'Customer Administrator',
-            adminType: 'CS' as const, 
-            badge: 'CS',
-            permissions: ['users', 'support']
-          }
-        }
-      }
-
-      const mockAdmin = mockAdmins[email as keyof typeof mockAdmins]
-      
-      if (mockAdmin && mockAdmin.password === password) {
-        const mockToken = `mock-token-${Date.now()}`
-        
-        Cookies.set('admin-token', mockToken, { expires: 1 })
-        localStorage.setItem('admin-token', mockToken)
-        setAdmin(mockAdmin.admin)
-
-        toast.success(`Welcome, ${mockAdmin.admin.fullName}! (Demo Mode)`)
-        return true
-      }
-      
-      const message = 'Invalid admin credentials'
+      const message = error.response?.data?.error?.message || 'Invalid admin credentials'
       toast.error(message)
       return false
     }
@@ -226,41 +154,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { jwt, user: newUser } = response
 
       Cookies.set('auth-token', jwt, { expires: 7 })
-      localStorage.setItem('auth-token', jwt)
       setUser(newUser)
 
       toast.success('Account created successfully!')
       return true
     } catch (error: any) {
-      const message = error.response?.data?.error?.message || error.message || 'Registration failed'
+      const message = error.response?.data?.error?.message || 'Registration failed'
       toast.error(message)
       return false
     }
   }
 
   const logout = () => {
-    Cookies.remove('auth-token')
-    localStorage.removeItem('auth-token')
-    setUser(null)
+    clearUserTokens()
     toast.success('Logged out successfully')
   }
 
   const adminLogout = async () => {
     try {
-      // In production, we'd call the logout endpoint
-      // For now, we'll just clear the tokens
+      // In production, call the logout endpoint if available
+      // await strapiApi.adminLogout()
     } catch (error) {
       // Silent fail for logout
     } finally {
-      Cookies.remove('admin-token')
-      localStorage.removeItem('admin-token')
-      setAdmin(null)
+      clearAdminTokens()
       toast.success('Admin logged out successfully')
     }
   }
 
   const updateUser = (userData: Partial<User>) => {
-    setUser(prev => prev ? { ...prev, ...userData } : null)
+    if (user) {
+      const updatedUser = { ...user, ...userData }
+      setUser(updatedUser)
+    }
   }
 
   const value: AuthContextType = {

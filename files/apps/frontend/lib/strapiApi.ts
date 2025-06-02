@@ -13,7 +13,8 @@ const apiClient = axios.create({
 // Request interceptor to add auth token
 apiClient.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('auth-token') || document.cookie
+    // Get token from cookie only
+    const token = document.cookie
       .split('; ')
       .find(row => row.startsWith('auth-token='))
       ?.split('=')[1]
@@ -32,8 +33,8 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       // Handle unauthorized access
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('auth-token')
         document.cookie = 'auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+        document.cookie = 'admin-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
       }
     }
     return Promise.reject(error)
@@ -53,45 +54,43 @@ export const strapiApi = {
     return response.data
   },
 
-  async createGame(gameData: {
-    name: string
-    description: string
-    type: 'straight' | 'nested'
-    status: 'free' | 'premium'
-    thumbnail?: File
-  }) {
-    const formData = new FormData()
-    
-    // Add basic game data
-    const data = {
-      name: gameData.name,
-      description: gameData.description,
-      type: gameData.type,
-      status: gameData.status,
-      isActive: true,
-      totalQuestions: 0,
-      sortOrder: 0
+  async createGame(gameData: any) {
+    try {
+      let response
+      
+      // If thumbnail is provided, use multipart form data
+      if (gameData.thumbnail) {
+        const formData = new FormData()
+        
+        // Append game data (excluding thumbnail)
+        const { thumbnail, ...gameDataWithoutThumbnail } = gameData
+        formData.append('data', JSON.stringify(gameDataWithoutThumbnail))
+        
+        // Append thumbnail file
+        formData.append('files.thumbnail', thumbnail)
+        
+        response = await apiClient.post('/api/games', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        })
+      } else {
+        // Standard JSON request without thumbnail
+        response = await apiClient.post('/api/games', {
+          data: gameData
+        })
+      }
+      
+      // If it's a nested game, create the categories automatically
+      if (gameData.type === 'nested' && response.data?.data?.id) {
+        await this.createNestedGameCategories(response.data.data.id, gameData.categoryNames)
+      }
+      
+      return response.data
+    } catch (error: any) {
+      console.error('Error creating game:', error)
+      throw error
     }
-    
-    formData.append('data', JSON.stringify(data))
-    
-    // Add thumbnail if provided
-    if (gameData.thumbnail) {
-      formData.append('files.thumbnail', gameData.thumbnail)
-    }
-
-    const response = await apiClient.post('/api/games', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
-
-    // For nested games, create 5 default categories + 1 special card
-    if (gameData.type === 'nested') {
-      await this.createNestedGameCategories(response.data.data.id)
-    }
-
-    return response.data
   },
 
   async updateGame(id: string, gameData: any) {
@@ -108,33 +107,47 @@ export const strapiApi = {
 
   // ============= CATEGORY OPERATIONS =============
 
-  async createNestedGameCategories(gameId: string) {
-    const defaultCategories = [
-      { name: 'Category 1', cardNumber: 1, description: 'First category for your nested game' },
-      { name: 'Category 2', cardNumber: 2, description: 'Second category for your nested game' },
-      { name: 'Category 3', cardNumber: 3, description: 'Third category for your nested game' },
-      { name: 'Category 4', cardNumber: 4, description: 'Fourth category for your nested game' },
-      { name: 'Category 5', cardNumber: 5, description: 'Fifth category for your nested game' },
-      { name: 'Special Card', cardNumber: 6, description: 'Special card without questions', questionCount: 0 },
-    ]
-
-    const createdCategories = []
-    for (let i = 0; i < defaultCategories.length; i++) {
-      const categoryData = {
-        ...defaultCategories[i],
-        game: gameId,
-        isActive: true,
-        status: 'free',
-        sortOrder: i + 1
+  async createNestedGameCategories(gameId: string, categoryNames?: string[]) {
+    try {
+      const defaultNames = [
+        'Category 1',
+        'Category 2', 
+        'Category 3',
+        'Category 4',
+        'Category 5'
+      ]
+      
+      const namesToUse = categoryNames || defaultNames
+      
+      // Create categories 1-5 with custom or default names
+      for (let i = 0; i < 5; i++) {
+        await apiClient.post('/api/categories', {
+          data: {
+            name: namesToUse[i] || `Category ${i + 1}`,
+            description: `Questions for ${namesToUse[i] || `Category ${i + 1}`}`,
+            cardNumber: i + 1,
+            game: gameId,
+            questionCount: 0
+          }
+        })
       }
-
-      const response = await apiClient.post('/api/categories', {
-        data: categoryData
+      
+      // Create special card (Card 6)
+      await apiClient.post('/api/categories', {
+        data: {
+          name: 'Special Card',
+          description: 'Special challenges and unique questions',
+          cardNumber: 6,
+          game: gameId,
+          questionCount: 0
+        }
       })
-      createdCategories.push(response.data.data)
+      
+      console.log(`Created 6 categories for nested game ${gameId}`)
+    } catch (error: any) {
+      console.error('Error creating nested game categories:', error)
+      // Don't throw here as the game was already created successfully
     }
-
-    return createdCategories
   },
 
   async getCategories(gameId?: string) {
@@ -287,7 +300,6 @@ export const strapiApi = {
     })
     
     if (response.data.jwt) {
-      localStorage.setItem('auth-token', response.data.jwt)
       document.cookie = `auth-token=${response.data.jwt}; path=/; max-age=${7 * 24 * 60 * 60}` // 7 days
     }
     
@@ -305,7 +317,6 @@ export const strapiApi = {
     const response = await apiClient.post('/api/auth/local/register', userData)
     
     if (response.data.jwt) {
-      localStorage.setItem('auth-token', response.data.jwt)
       document.cookie = `auth-token=${response.data.jwt}; path=/; max-age=${7 * 24 * 60 * 60}` // 7 days
     }
     
@@ -319,7 +330,6 @@ export const strapiApi = {
     })
     
     if (response.data.data.token) {
-      localStorage.setItem('admin-token', response.data.data.token)
       document.cookie = `admin-token=${response.data.data.token}; path=/; max-age=${24 * 60 * 60}` // 1 day
     }
     

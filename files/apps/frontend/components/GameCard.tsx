@@ -1,9 +1,23 @@
 'use client'
 
-import React from 'react'
-import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 import { useAuth } from '@/context/AuthContext'
-import { PlayIcon, LockClosedIcon, StarIcon, UserIcon } from '@heroicons/react/24/solid'
+import { useRouter } from 'next/navigation'
+import { 
+  PlayIcon, 
+  LockClosedIcon, 
+  StarIcon, 
+  QuestionMarkCircleIcon,
+  FolderIcon,
+  SparklesIcon,
+  CheckBadgeIcon,
+  BoltIcon,
+  ArrowRightIcon
+} from '@heroicons/react/24/outline'
+import { 
+  StarIcon as StarIconSolid 
+} from '@heroicons/react/24/solid'
+import toast from 'react-hot-toast'
 
 interface Game {
   id: string
@@ -25,98 +39,206 @@ interface Game {
   }
 }
 
-export default function GameCard({ game }: { game: Game }) {
-  const router = useRouter()
-  const { user } = useAuth()
-  const isPremium = game.attributes.status === 'premium'
-  
-  // Determine access type based on user status
-  const getAccessType = () => {
-    if (!user) return 'login'
-    if (game.attributes.status === 'free') return 'free'
-    if (user.subscriptionStatus === 'premium') return 'free'
-    return 'locked'
-  }
-  
-  const accessType = getAccessType()
-  const isLocked = accessType === 'locked'
-  const needsLogin = accessType === 'login'
+interface GameCardProps {
+  game: Game
+}
 
-  const handleGameClick = () => {
-    if (needsLogin) {
-      // This could trigger a login modal or redirect to login
-      router.push('/login')
+export default function GameCard({ game }: GameCardProps) {
+  const { user } = useAuth()
+  const router = useRouter()
+
+  const canPlayGame = () => {
+    if (game.attributes.status === 'free') return true
+    return user?.subscriptionStatus === 'premium'
+  }
+
+  const handlePlayGame = () => {
+    if (!user) {
+      toast.error('Please sign in to play games')
       return
     }
-    
-    if (!isLocked) {
-      router.push(`/game/${game.id}`)
+
+    if (!canPlayGame()) {
+      toast.error('This is a premium game. Please upgrade to access premium content.')
+      return
+    }
+
+    router.push(`/game/${game.id}`)
+  }
+
+  const getGameTypeInfo = () => {
+    switch (game.attributes.type) {
+      case 'straight':
+        return {
+          label: 'Straight Trivia',
+          description: 'Direct questions across various categories',
+          icon: QuestionMarkCircleIcon,
+          color: 'from-blue-500 to-blue-600',
+          bgColor: 'bg-blue-50',
+          textColor: 'text-blue-700'
+        }
+      case 'nested':
+        return {
+          label: 'Nested Cards',
+          description: 'Progressive card-based challenges',
+          icon: FolderIcon,
+          color: 'from-purple-500 to-purple-600',
+          bgColor: 'bg-purple-50',
+          textColor: 'text-purple-700'
+        }
+      default:
+        return {
+          label: 'Unknown',
+          description: 'Game type not specified',
+          icon: QuestionMarkCircleIcon,
+          color: 'from-gray-500 to-gray-600',
+          bgColor: 'bg-gray-50',
+          textColor: 'text-gray-700'
+        }
     }
   }
 
-  const getThumbnailUrl = () => {
-    if (game.attributes.thumbnail?.data?.attributes?.url) {
-      const url = game.attributes.thumbnail.data.attributes.url
-      // Handle relative URLs from Strapi
-      return url.startsWith('http') ? url : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${url}`
-    }
-    return null
-  }
-
-  const thumbnailUrl = getThumbnailUrl()
+  const typeInfo = getGameTypeInfo()
 
   return (
-    <div
-      className={`game-card flex flex-col h-full relative group ${isPremium ? 'border-yellow-400' : ''}`}
+    <motion.div 
+      className="game-card group cursor-pointer"
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      onClick={handlePlayGame}
     >
-      <div className="relative h-48 w-full bg-gradient-to-br from-blue-100 to-indigo-200 flex items-center justify-center">
-        {thumbnailUrl ? (
-          <img
-            src={thumbnailUrl}
-            alt={game.attributes.name}
-            className="object-cover w-full h-full rounded-t-2xl"
-          />
-        ) : (
-          <PlayIcon className="h-16 w-16 text-blue-400 opacity-60" />
-        )}
-        {isPremium && (
-          <span className="absolute top-3 right-3 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full shadow border border-yellow-500 flex items-center gap-1">
-            <StarIcon className="h-4 w-4 mr-1 text-yellow-700" /> Premium
-          </span>
-        )}
-        {isLocked && (
-          <span className="absolute top-3 left-3 bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-1 rounded-full shadow border border-gray-300 flex items-center gap-1">
-            <LockClosedIcon className="h-4 w-4 mr-1 text-gray-500" /> Locked
-          </span>
-        )}
-        {needsLogin && (
-          <span className="absolute top-3 left-3 bg-blue-200 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full shadow border border-blue-300 flex items-center gap-1">
-            <UserIcon className="h-4 w-4 mr-1 text-blue-500" /> Login Required
-          </span>
-        )}
-      </div>
-      <div className="flex-1 flex flex-col p-6">
-        <h3 className="text-xl font-bold text-blue-900 mb-2 group-hover:text-blue-700 transition-colors">
-          {game.attributes.name}
-        </h3>
-        <p className="text-gray-600 mb-4 line-clamp-3">
-          {game.attributes.description}
-        </p>
-        <div className="flex items-center justify-between mt-auto">
-          <span className="text-sm text-gray-500">
-            {game.attributes.totalQuestions} questions
-          </span>
-          <button
-            className={`btn-primary flex items-center gap-2 text-sm px-4 py-2 ${isLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-            disabled={isLocked}
-            onClick={handleGameClick}
-            aria-label={isLocked ? 'Locked' : needsLogin ? 'Login to play' : 'Play game'}
-          >
-            <PlayIcon className="h-5 w-5" />
-            {isLocked ? 'Locked' : needsLogin ? 'Login to Play' : 'Play'}
-          </button>
+      {/* Card Header with Image/Pattern */}
+      <div className={`relative h-48 bg-gradient-to-br ${typeInfo.color} overflow-hidden`}>
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-4 right-4 w-32 h-32 bg-white/20 rounded-full filter blur-xl"></div>
+          <div className="absolute bottom-4 left-4 w-24 h-24 bg-white/20 rounded-full filter blur-lg"></div>
+        </div>
+        
+        {/* Game Type Icon */}
+        <div className="absolute top-4 left-4">
+          <div className="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
+            <typeInfo.icon className="h-6 w-6 text-white" />
+          </div>
+        </div>
+
+        {/* Game Status Badge */}
+        <div className="absolute top-4 right-4">
+          {game.attributes.status === 'premium' ? (
+            <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center gap-1">
+              <StarIconSolid className="h-3 w-3" />
+              Premium
+            </div>
+          ) : (
+            <div className="bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-semibold">
+              Free
+            </div>
+          )}
+        </div>
+
+        {/* Play Button Overlay */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="bg-white/90 backdrop-blur-sm p-4 rounded-full shadow-xl transform scale-75 group-hover:scale-100 transition-transform duration-300">
+            {canPlayGame() ? (
+              <PlayIcon className="h-8 w-8 text-gray-900" />
+            ) : (
+              <LockClosedIcon className="h-8 w-8 text-gray-700" />
+            )}
+          </div>
+        </div>
+
+        {/* Question Count Badge */}
+        <div className="absolute bottom-4 left-4">
+          <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-white text-xs font-semibold flex items-center gap-1">
+            <QuestionMarkCircleIcon className="h-3 w-3" />
+            {game.attributes.totalQuestions} Questions
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Card Content */}
+      <div className="p-6">
+        {/* Game Type Label */}
+        <div className="flex items-center justify-between mb-3">
+          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${typeInfo.bgColor} ${typeInfo.textColor}`}>
+            <typeInfo.icon className="h-3 w-3" />
+            {typeInfo.label}
+          </span>
+          
+          {game.attributes.type === 'nested' && (
+            <div className="flex items-center gap-1 text-xs text-purple-600 font-medium">
+              <FolderIcon className="h-3 w-3" />
+              5 Categories + Special
+            </div>
+          )}
+        </div>
+
+        {/* Game Title */}
+        <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-200">
+          {game.attributes.name}
+        </h3>
+
+        {/* Game Description */}
+        <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-2">
+          {game.attributes.description}
+        </p>
+
+        {/* Game Features */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {game.attributes.type === 'straight' && (
+            <>
+              <span className="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-md font-medium">
+                <BoltIcon className="h-3 w-3" />
+                Quick Play
+              </span>
+              <span className="inline-flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-md font-medium">
+                <CheckBadgeIcon className="h-3 w-3" />
+                Instant Results
+              </span>
+            </>
+          )}
+          
+          {game.attributes.type === 'nested' && (
+            <>
+              <span className="inline-flex items-center gap-1 text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-md font-medium">
+                <SparklesIcon className="h-3 w-3" />
+                Progressive
+              </span>
+              <span className="inline-flex items-center gap-1 text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md font-medium">
+                <FolderIcon className="h-3 w-3" />
+                Card Based
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* Action Button */}
+        <div className="flex items-center justify-between">
+          {canPlayGame() ? (
+            <button className="btn-primary w-full group-hover:shadow-lg transition-shadow duration-200">
+              <PlayIcon className="h-4 w-4 mr-2" />
+              Play Game
+              <ArrowRightIcon className="h-4 w-4 ml-auto group-hover:translate-x-1 transition-transform duration-200" />
+            </button>
+          ) : (
+            <div className="w-full">
+              <button 
+                disabled
+                className="w-full bg-gray-100 text-gray-500 font-semibold py-3 px-4 rounded-lg cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <LockClosedIcon className="h-4 w-4" />
+                Premium Required
+              </button>
+              <p className="text-xs text-gray-500 text-center mt-2">
+                Upgrade to unlock premium games
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Subtle Hover Indicator */}
+      <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-blue-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-b-2xl"></div>
+    </motion.div>
   )
 }

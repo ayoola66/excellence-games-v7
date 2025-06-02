@@ -1,11 +1,21 @@
 'use client'
 
 import { useState } from 'react'
-import { Dialog, Transition } from '@headlessui/react'
-import { Fragment } from 'react'
-import { XMarkIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/context/AuthContext'
-import toast from 'react-hot-toast'
+import { 
+  XMarkIcon, 
+  EyeIcon, 
+  EyeSlashIcon, 
+  UserIcon,
+  LockClosedIcon,
+  EnvelopeIcon,
+  PhoneIcon,
+  MapPinIcon,
+  SparklesIcon,
+  ArrowRightIcon,
+  CheckCircleIcon
+} from '@heroicons/react/24/outline'
 
 interface RegisterModalProps {
   isOpen: boolean
@@ -21,54 +31,54 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }: Regi
     phone: '',
     deliveryAddress: '',
     password: '',
-    confirmPassword: '',
+    confirmPassword: ''
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [errors, setErrors] = useState<{ [key: string]: string }>({})
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {}
-
+    const newErrors: { [key: string]: string } = {}
+    
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'Full name is required'
     } else if (formData.fullName.trim().length < 2) {
       newErrors.fullName = 'Full name must be at least 2 characters'
     }
-
+    
     if (!formData.email) {
       newErrors.email = 'Email is required'
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address'
     }
-
+    
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone number is required'
     } else if (!/^[\+]?[1-9][\d]{0,15}$/.test(formData.phone.replace(/\s/g, ''))) {
       newErrors.phone = 'Please enter a valid phone number'
     }
-
+    
     if (!formData.deliveryAddress.trim()) {
       newErrors.deliveryAddress = 'Delivery address is required'
     } else if (formData.deliveryAddress.trim().length < 10) {
       newErrors.deliveryAddress = 'Please enter a complete address'
     }
-
+    
     if (!formData.password) {
       newErrors.password = 'Password is required'
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters'
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters'
     } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = 'Password must contain uppercase, lowercase, and number'
+      newErrors.password = 'Password must contain at least one uppercase letter, one lowercase letter, and one number'
     }
-
+    
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = 'Please confirm your password'
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match'
     }
-
+    
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -76,11 +86,10 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }: Regi
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!validateForm()) {
-      return
-    }
-
+    if (!validateForm()) return
+    
     setIsLoading(true)
+    setErrors({})
     
     try {
       const success = await register(formData)
@@ -92,253 +101,340 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }: Regi
           phone: '',
           deliveryAddress: '',
           password: '',
-          confirmPassword: '',
+          confirmPassword: ''
         })
-        setErrors({})
-        toast.success('Welcome to Elite Games! Your account has been created.')
       }
     } catch (error) {
-      toast.error('Registration failed. Please try again.')
+      setErrors({ general: 'Registration failed. Please try again.' })
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }))
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }))
     }
   }
 
+  if (!isOpen) return null
+
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
+    <AnimatePresence>
+      <div className="modal-overlay" onClick={onClose}>
+        <motion.div
+          className="modal-content max-w-2xl"
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          onClick={(e) => e.stopPropagation()}
         >
-          <div className="fixed inset-0 bg-black bg-opacity-25" />
-        </Transition.Child>
-
-        <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4 text-center">
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
+          {/* Header */}
+          <div className="relative p-8 pb-6">
+            <button
+              onClick={onClose}
+              className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200"
             >
-              <Dialog.Panel className="w-full max-w-lg transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                <div className="flex items-center justify-between mb-6">
-                  <Dialog.Title as="h3" className="text-2xl font-bold text-gray-900">
-                    Create Account
-                  </Dialog.Title>
-                  <button
-                    onClick={onClose}
-                    className="text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    <XMarkIcon className="h-6 w-6" />
-                  </button>
-                </div>
+              <XMarkIcon className="h-5 w-5" />
+            </button>
+            
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                <SparklesIcon className="h-8 w-8 text-white" />
+              </div>
+              <h2 className="heading-3 text-gray-900 mb-2">
+                Join Elite Games
+              </h2>
+              <p className="body-normal text-gray-600">
+                Create your account and start your trivia adventure
+              </p>
+            </div>
+          </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
-                      Full Name
-                    </label>
+          {/* Form */}
+          <div className="px-8 pb-8">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {errors.general && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm"
+                >
+                  {errors.general}
+                </motion.div>
+              )}
+
+              {/* Two Column Layout for Personal Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Full Name Field */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    Full Name
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <UserIcon className="h-5 w-5 text-gray-400" />
+                    </div>
                     <input
                       type="text"
-                      id="fullName"
-                      name="fullName"
                       value={formData.fullName}
-                      onChange={handleInputChange}
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        errors.fullName ? 'border-red-500' : 'border-gray-300'
+                      onChange={(e) => handleInputChange('fullName', e.target.value)}
+                      className={`input-field pl-10 ${
+                        errors.fullName ? 'border-red-300 focus:ring-red-500' : ''
                       }`}
                       placeholder="Enter your full name"
-                      disabled={isLoading}
+                      autoComplete="name"
                     />
-                    {errors.fullName && (
-                      <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
-                    )}
                   </div>
+                  {errors.fullName && (
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-red-600 text-xs mt-1"
+                    >
+                      {errors.fullName}
+                    </motion.p>
+                  )}
+                </div>
 
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                      Email Address
-                    </label>
+                {/* Email Field */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <EnvelopeIcon className="h-5 w-5 text-gray-400" />
+                    </div>
                     <input
                       type="email"
-                      id="email"
-                      name="email"
                       value={formData.email}
-                      onChange={handleInputChange}
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        errors.email ? 'border-red-500' : 'border-gray-300'
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      className={`input-field pl-10 ${
+                        errors.email ? 'border-red-300 focus:ring-red-500' : ''
                       }`}
-                      placeholder="Enter your email"
-                      disabled={isLoading}
+                      placeholder="Enter your email address"
+                      autoComplete="email"
                     />
-                    {errors.email && (
-                      <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-                    )}
                   </div>
-
-                  <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                      Phone Number
-                    </label>
-                    <input
-                      type="tel"
-                      id="phone"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        errors.phone ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="Enter your phone number"
-                      disabled={isLoading}
-                    />
-                    {errors.phone && (
-                      <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label htmlFor="deliveryAddress" className="block text-sm font-medium text-gray-700 mb-1">
-                      Delivery Address
-                    </label>
-                    <textarea
-                      id="deliveryAddress"
-                      name="deliveryAddress"
-                      value={formData.deliveryAddress}
-                      onChange={handleInputChange}
-                      rows={3}
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${
-                        errors.deliveryAddress ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="Enter your complete delivery address"
-                      disabled={isLoading}
-                    />
-                    {errors.deliveryAddress && (
-                      <p className="mt-1 text-sm text-red-600">{errors.deliveryAddress}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                      Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        id="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10 ${
-                          errors.password ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        placeholder="Create a strong password"
-                        disabled={isLoading}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                      >
-                        {showPassword ? (
-                          <EyeSlashIcon className="h-5 w-5 text-gray-400" />
-                        ) : (
-                          <EyeIcon className="h-5 w-5 text-gray-400" />
-                        )}
-                      </button>
-                    </div>
-                    {errors.password && (
-                      <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                      Confirm Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showConfirmPassword ? 'text' : 'password'}
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        value={formData.confirmPassword}
-                        onChange={handleInputChange}
-                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10 ${
-                          errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        placeholder="Confirm your password"
-                        disabled={isLoading}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                      >
-                        {showConfirmPassword ? (
-                          <EyeSlashIcon className="h-5 w-5 text-gray-400" />
-                        ) : (
-                          <EyeIcon className="h-5 w-5 text-gray-400" />
-                        )}
-                      </button>
-                    </div>
-                    {errors.confirmPassword && (
-                      <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
-                    )}
-                  </div>
-
-                  <div className="text-xs text-gray-500">
-                    By creating an account, you agree to our Terms of Service and Privacy Policy.
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 ${
-                      isLoading
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-lg'
-                    }`}
-                  >
-                    {isLoading ? 'Creating Account...' : 'Create Account'}
-                  </button>
-                </form>
-
-                <div className="mt-6 text-center">
-                  <p className="text-sm text-gray-600">
-                    Already have an account?{' '}
-                    <button
-                      onClick={onSwitchToLogin}
-                      className="text-blue-600 hover:text-blue-500 font-medium"
+                  {errors.email && (
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-red-600 text-xs mt-1"
                     >
-                      Sign in here
-                    </button>
-                  </p>
+                      {errors.email}
+                    </motion.p>
+                  )}
                 </div>
-              </Dialog.Panel>
-            </Transition.Child>
+              </div>
+
+              {/* Phone Field */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Phone Number
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <PhoneIcon className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    className={`input-field pl-10 ${
+                      errors.phone ? 'border-red-300 focus:ring-red-500' : ''
+                    }`}
+                    placeholder="Enter your phone number"
+                    autoComplete="tel"
+                  />
+                </div>
+                {errors.phone && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-red-600 text-xs mt-1"
+                  >
+                    {errors.phone}
+                  </motion.p>
+                )}
+              </div>
+
+              {/* Delivery Address Field */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Delivery Address
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <MapPinIcon className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <textarea
+                    value={formData.deliveryAddress}
+                    onChange={(e) => handleInputChange('deliveryAddress', e.target.value)}
+                    className={`input-field pl-10 min-h-[80px] resize-none ${
+                      errors.deliveryAddress ? 'border-red-300 focus:ring-red-500' : ''
+                    }`}
+                    placeholder="Enter your complete delivery address"
+                    rows={3}
+                  />
+                </div>
+                {errors.deliveryAddress && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-red-600 text-xs mt-1"
+                  >
+                    {errors.deliveryAddress}
+                  </motion.p>
+                )}
+              </div>
+
+              {/* Password Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Password Field */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <LockClosedIcon className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={formData.password}
+                      onChange={(e) => handleInputChange('password', e.target.value)}
+                      className={`input-field pl-10 pr-10 ${
+                        errors.password ? 'border-red-300 focus:ring-red-500' : ''
+                      }`}
+                      placeholder="Create a password"
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? (
+                        <EyeSlashIcon className="h-5 w-5" />
+                      ) : (
+                        <EyeIcon className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                  {errors.password && (
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-red-600 text-xs mt-1"
+                    >
+                      {errors.password}
+                    </motion.p>
+                  )}
+                </div>
+
+                {/* Confirm Password Field */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <CheckCircleIcon className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={formData.confirmPassword}
+                      onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                      className={`input-field pl-10 pr-10 ${
+                        errors.confirmPassword ? 'border-red-300 focus:ring-red-500' : ''
+                      }`}
+                      placeholder="Confirm your password"
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeSlashIcon className="h-5 w-5" />
+                      ) : (
+                        <EyeIcon className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                  {errors.confirmPassword && (
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-red-600 text-xs mt-1"
+                    >
+                      {errors.confirmPassword}
+                    </motion.p>
+                  )}
+                </div>
+              </div>
+
+              {/* Password Requirements */}
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <p className="text-sm font-medium text-gray-700 mb-2">Password Requirements:</p>
+                <ul className="text-xs text-gray-600 space-y-1">
+                  <li className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${formData.password.length >= 8 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                    At least 8 characters
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${/(?=.*[a-z])(?=.*[A-Z])/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                    Both uppercase and lowercase letters
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${/(?=.*\d)/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                    At least one number
+                  </li>
+                </ul>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className={`w-full btn-primary py-4 text-base ${
+                  isLoading ? 'opacity-75 cursor-not-allowed' : ''
+                }`}
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="spinner h-4 w-4"></div>
+                    Creating Account...
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-2">
+                    Create Account
+                    <ArrowRightIcon className="h-4 w-4" />
+                  </div>
+                )}
+              </button>
+            </form>
+
+            {/* Footer */}
+            <div className="mt-8 text-center">
+              <p className="text-sm text-gray-600">
+                Already have an account?{' '}
+                <button
+                  onClick={onSwitchToLogin}
+                  className="font-semibold text-blue-600 hover:text-blue-500 transition-colors duration-200"
+                >
+                  Sign in here
+                </button>
+              </p>
+            </div>
           </div>
-        </div>
-      </Dialog>
-    </Transition>
+        </motion.div>
+      </div>
+    </AnimatePresence>
   )
 } 

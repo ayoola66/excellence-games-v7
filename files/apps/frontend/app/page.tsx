@@ -21,6 +21,10 @@ import {
   CogIcon,
   CheckCircleIcon,
   ShieldCheckIcon,
+  RocketLaunchIcon,
+  FireIcon,
+  BoltIcon,
+  GlobeAltIcon,
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 
@@ -106,59 +110,86 @@ export default function HomePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen gradient-primary flex items-center justify-center">
+        <div className="text-center">
+          <div className="spinner h-16 w-16 mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading Elite Games...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Navigation Header */}
-      <header className="bg-white/95 backdrop-blur-sm shadow-sm border-b-2 border-blue-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white">
+      {/* Modern Navigation Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-white/20 backdrop-blur-xl">
+        <div className="container-main">
           <div className="flex justify-between items-center h-20">
-            <div className="flex items-center">
-              <div className="bg-blue-900 p-2 rounded-xl mr-4">
-                <PlayIcon className="h-8 w-8 text-yellow-400" />
+            {/* Logo */}
+            <motion.div 
+              className="flex items-center"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-3 rounded-2xl mr-4 shadow-lg">
+                <RocketLaunchIcon className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-blue-900 tracking-tight">Elite Games</h1>
-                <p className="text-xs text-blue-600 font-medium">Premium Trivia Platform</p>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-900 to-indigo-900 bg-clip-text text-transparent">
+                  Elite Games
+                </h1>
+                <p className="text-xs text-blue-600 font-semibold tracking-wide">
+                  PREMIUM TRIVIA PLATFORM
+                </p>
               </div>
-            </div>
+            </motion.div>
             
-            <div className="flex items-center space-x-4">
+            {/* Navigation Actions */}
+            <motion.div 
+              className="flex items-center space-x-4"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+            >
               {user ? (
                 <div className="flex items-center space-x-4">
-                  <span className="text-sm text-blue-800 font-medium">
-                    Welcome back, {user.fullName}
-                  </span>
-                  {user.subscriptionStatus === 'premium' && (
-                    <span className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full border border-yellow-600 shadow-sm flex items-center gap-1">
-                      <StarIcon className="h-3 w-3" /> Premium
-                    </span>
-                  )}
-                  <button 
-                    onClick={() => router.push('/profile')}
-                    className="btn-secondary flex items-center gap-2"
-                  >
-                    <UserIcon className="h-4 w-4" />
-                    Profile
-                  </button>
-                  <button 
-                    onClick={() => router.push('/admin')}
-                    className="btn-primary flex items-center gap-2"
-                  >
-                    <CogIcon className="h-4 w-4" />
-                    Admin
-                  </button>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-gray-900">
+                      {user.fullName}
+                    </p>
+                    <div className="flex items-center justify-end gap-2">
+                      {user.subscriptionStatus === 'premium' ? (
+                        <span className="badge-premium text-xs">
+                          <StarIcon className="h-3 w-3 mr-1" /> Premium
+                        </span>
+                      ) : (
+                        <span className="badge-info text-xs">Free Member</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button 
+                      onClick={() => router.push('/profile')}
+                      className="btn-ghost"
+                    >
+                      <UserIcon className="h-4 w-4 mr-2" />
+                      Profile
+                    </button>
+                    <button 
+                      onClick={() => router.push('/admin')}
+                      className="btn-primary"
+                    >
+                      <CogIcon className="h-4 w-4 mr-2" />
+                      Admin
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="flex items-center space-x-3">
                   <button 
                     onClick={() => setShowLoginModal(true)}
-                    className="btn-secondary"
+                    className="btn-ghost"
                   >
                     Sign In
                   </button>
@@ -170,169 +201,263 @@ export default function HomePage() {
                   </button>
                 </div>
               )}
-            </div>
+            </motion.div>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 text-white py-24 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMSIvPjwvZz48L2c+PC9zdmc+')] opacity-50"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <h2 className="text-6xl md:text-7xl font-bold mb-8 text-shadow leading-tight">
-              Challenge Your Mind with 
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-300"> Elite Trivia</span>
-            </h2>
-            <p className="text-xl md:text-2xl mb-12 max-w-4xl mx-auto leading-relaxed text-blue-100">
-              Discover engaging trivia games with straight categories and nested card challenges. 
-              Test your knowledge across various topics with our premium British question database.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              {!user && (
-                <>
-                  <button 
-                    onClick={() => setShowRegisterModal(true)}
-                    className="bg-yellow-400 text-blue-900 font-bold py-4 px-8 rounded-xl hover:bg-yellow-300 transition-all duration-200 shadow-lg hover:shadow-xl text-lg"
-                  >
-                    Start Playing Free
-                  </button>
-                  <button 
-                    onClick={() => router.push('/landing')}
-                    className="bg-white/10 backdrop-blur-sm text-white font-semibold py-4 px-8 rounded-xl hover:bg-white/20 transition-all duration-200 border border-white/20 text-lg"
-                  >
-                    Buy Board Game
-                  </button>
-                </>
-              )}
-            </div>
-          </motion.div>
+      {/* Hero Section - Redesigned */}
+      <section className="relative pt-20 gradient-hero text-white overflow-hidden">
+        {/* Animated Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-yellow-400 to-pink-500 rounded-full filter blur-3xl animate-bounce-gentle"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full filter blur-3xl animate-bounce-gentle" style={{animationDelay: '1s'}}></div>
+        </div>
+        
+        <div className="container-main relative">
+          <div className="section-padding text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              {/* Hero Badge */}
+              <motion.div 
+                className="inline-flex items-center gap-2 glass px-6 py-3 rounded-full mb-8"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                <BoltIcon className="h-5 w-5 text-yellow-400" />
+                <span className="text-sm font-semibold">Britain's #1 Premium Trivia Platform</span>
+              </motion.div>
+
+              {/* Main Heading */}
+              <h1 className="heading-1 text-white mb-8 text-shadow-lg">
+                Challenge Your Mind with
+                <br />
+                <span className="bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 bg-clip-text text-transparent">
+                  Elite Trivia Games
+                </span>
+              </h1>
+              
+              {/* Subheading */}
+              <p className="body-large text-blue-100 max-w-4xl mx-auto mb-12">
+                Experience the finest British trivia entertainment with our sophisticated question database. 
+                From straight categories to innovative nested card games, discover knowledge like never before.
+              </p>
+
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+                {!user && (
+                  <>
+                    <motion.button 
+                      onClick={() => setShowRegisterModal(true)}
+                      className="btn-accent text-lg px-8 py-4 shadow-2xl"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <PlayIcon className="h-6 w-6 mr-2" />
+                      Start Playing Free
+                    </motion.button>
+                    <motion.button 
+                      onClick={() => router.push('/landing')}
+                      className="glass text-white font-semibold text-lg px-8 py-4 rounded-xl hover:bg-white/20 transition-all duration-200"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <GlobeAltIcon className="h-6 w-6 mr-2" />
+                      Explore Board Games
+                    </motion.button>
+                  </>
+                )}
+              </div>
+
+              {/* Stats Row */}
+              <motion.div 
+                className="grid grid-cols-2 md:grid-cols-4 gap-8 glass rounded-2xl p-8 max-w-4xl mx-auto"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+              >
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-white mb-2">500+</div>
+                  <div className="text-blue-200 text-sm font-medium">Premium Questions</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-white mb-2">50K+</div>
+                  <div className="text-blue-200 text-sm font-medium">Active Players</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-white mb-2">98%</div>
+                  <div className="text-blue-200 text-sm font-medium">Satisfaction Rate</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-white mb-2">24/7</div>
+                  <div className="text-blue-200 text-sm font-medium">Support Available</div>
+                </div>
+              </motion.div>
+            </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Games Section */}
-      <section className="py-20 bg-gradient-to-b from-white to-blue-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h3 className="text-4xl font-bold text-blue-900 mb-6">
+      {/* Games Section - Enhanced */}
+      <section className="section-padding gradient-primary">
+        <div className="container-main">
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <div className="inline-flex items-center gap-2 badge-info mb-4">
+              <FireIcon className="h-4 w-4" />
+              Featured Games
+            </div>
+            <h2 className="heading-2 text-gray-900 mb-6">
               Choose Your Challenge
-            </h3>
-            <p className="text-xl text-blue-700 max-w-3xl mx-auto leading-relaxed">
-              From straight trivia to nested card games, find the perfect challenge for your skill level.
+            </h2>
+            <p className="body-large max-w-3xl mx-auto">
+              From straight trivia to innovative nested card games, find the perfect challenge 
+              that matches your expertise and interests.
             </p>
-          </div>
+          </motion.div>
 
           {gamesLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid-responsive">
               {[...Array(6)].map((_, i) => (
-                <div key={i} className="game-card animate-pulse">
-                  <div className="h-48 bg-blue-200 rounded-t-2xl"></div>
-                  <div className="p-6">
-                    <div className="h-4 bg-blue-200 rounded mb-2"></div>
-                    <div className="h-3 bg-blue-200 rounded mb-4"></div>
-                    <div className="h-8 bg-blue-200 rounded"></div>
+                <motion.div 
+                  key={i} 
+                  className="card-elevated"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: i * 0.1 }}
+                >
+                  <div className="h-48 bg-gray-200 shimmer"></div>
+                  <div className="p-6 space-y-3">
+                    <div className="h-4 bg-gray-200 shimmer rounded w-3/4"></div>
+                    <div className="h-3 bg-gray-200 shimmer rounded w-full"></div>
+                    <div className="h-3 bg-gray-200 shimmer rounded w-2/3"></div>
+                    <div className="h-10 bg-gray-200 shimmer rounded"></div>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          ) : games.length > 0 ? (
+            <div className="grid-responsive">
               {games.map((game, index) => (
                 <motion.div
                   key={game.id}
                   initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
+                  viewport={{ once: true }}
                 >
                   <GameCard game={game} />
                 </motion.div>
               ))}
             </div>
-          )}
-
-          {games.length === 0 && !gamesLoading && (
-            <div className="text-center py-16">
-              <CogIcon className="h-20 w-20 text-blue-300 mx-auto mb-6" />
-              <h4 className="text-2xl font-bold text-blue-900 mb-4">
-                No Games Available
-              </h4>
-              <p className="text-blue-600 text-lg">
-                Games are being prepared. Please check back soon!
+          ) : (
+            <motion.div 
+              className="text-center py-20"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6 }}
+            >
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-2xl mx-auto mb-6 flex items-center justify-center">
+                <SparklesIcon className="h-10 w-10 text-white" />
+              </div>
+              <h3 className="heading-3 text-gray-900 mb-4">
+                Exciting Games Coming Soon
+              </h3>
+              <p className="body-normal mb-8">
+                Our expert team is crafting amazing trivia experiences. Be the first to know when they launch!
               </p>
-            </div>
+              <button 
+                onClick={() => setShowRegisterModal(true)}
+                className="btn-primary"
+              >
+                Join Waitlist
+              </button>
+            </motion.div>
           )}
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="bg-gradient-to-br from-blue-900 to-indigo-900 py-20 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h3 className="text-4xl font-bold mb-6">
+      {/* Features Section - Modernized */}
+      <section className="section-padding bg-white">
+        <div className="container-main">
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="heading-2 text-gray-900 mb-6">
               Why Choose Elite Games?
-            </h3>
-            <p className="text-xl text-blue-200 max-w-3xl mx-auto">
-              Experience the finest in British trivia entertainment with our premium features.
+            </h2>
+            <p className="body-large max-w-3xl mx-auto">
+              Experience the pinnacle of British trivia entertainment with features designed for excellence.
             </p>
-          </div>
+          </motion.div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-center group"
-            >
-              <div className="bg-yellow-400 rounded-2xl w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-200">
-                <PlayIcon className="h-10 w-10 text-blue-900" />
-              </div>
-              <h4 className="text-2xl font-bold mb-4">Engaging Gameplay</h4>
-              <p className="text-blue-200 leading-relaxed">
-                Interactive questions with immediate feedback and detailed explanations to enhance your learning.
-              </p>
-            </motion.div>
-            
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-center group"
-            >
-              <div className="bg-yellow-400 rounded-2xl w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-200">
-                <StarIcon className="h-10 w-10 text-blue-900" />
-              </div>
-              <h4 className="text-2xl font-bold mb-4">Premium Features</h4>
-              <p className="text-blue-200 leading-relaxed">
-                Access all games, upload custom music, enjoy ad-free experience, and unlock exclusive content.
-              </p>
-            </motion.div>
-            
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="text-center group"
-            >
-              <div className="bg-yellow-400 rounded-2xl w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-200">
-                <CheckCircleIcon className="h-10 w-10 text-blue-900" />
-              </div>
-              <h4 className="text-2xl font-bold mb-4">Progress Tracking</h4>
-              <p className="text-blue-200 leading-relaxed">
-                Track your performance, see detailed statistics, and monitor your improvement over time.
-              </p>
-            </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
+            {[
+              {
+                icon: BoltIcon,
+                title: "Lightning-Fast Gameplay",
+                description: "Instant feedback, seamless navigation, and real-time scoring keep you engaged from start to finish."
+              },
+              {
+                icon: TrophyIcon,
+                title: "Premium Content",
+                description: "Carefully curated questions by British experts with detailed explanations and contextual learning."
+              },
+              {
+                icon: UserGroupIcon,
+                title: "Community Features",
+                description: "Join thousands of trivia enthusiasts, compete on leaderboards, and track your progress over time."
+              }
+            ].map((feature, index) => (
+              <motion.div 
+                key={index}
+                className="text-center group"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.2 }}
+                viewport={{ once: true }}
+              >
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl mx-auto mb-6 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                  <feature.icon className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="heading-3 text-gray-900 mb-4">
+                  {feature.title}
+                </h3>
+                <p className="body-normal">
+                  {feature.description}
+                </p>
+              </motion.div>
+            ))}
           </div>
 
-          <div className="mt-16 text-center">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full border border-white/20">
-              <ShieldCheckIcon className="h-5 w-5 text-yellow-400" />
-              <span className="text-sm font-medium">Made with pride in the United Kingdom</span>
+          {/* Trust Badge */}
+          <motion.div 
+            className="mt-20 text-center"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <div className="inline-flex items-center gap-3 glass-dark px-8 py-4 rounded-full">
+              <ShieldCheckIcon className="h-6 w-6 text-blue-600" />
+              <span className="text-sm font-semibold text-gray-900">
+                Proudly Made in the United Kingdom
+              </span>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 

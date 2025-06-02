@@ -23,7 +23,8 @@ import {
   FolderIcon,
   CloudArrowUpIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 
@@ -100,8 +101,17 @@ export default function AdminPage() {
     name: '',
     description: '',
     type: 'straight' as 'straight' | 'nested',
-    status: 'free' as 'free' | 'premium'
+    status: 'free' as 'free' | 'premium',
+    thumbnail: null as File | null
   })
+
+  const [categoryNames, setCategoryNames] = useState([
+    'Category 1',
+    'Category 2', 
+    'Category 3',
+    'Category 4',
+    'Category 5'
+  ])
 
   const [musicForm, setMusicForm] = useState({
     name: '',
@@ -199,16 +209,21 @@ export default function AdminPage() {
         await strapiApi.updateGame(editingGame.id, gameForm)
         toast.success('Game updated successfully')
       } else {
-        // Create new game
-        const response = await strapiApi.createGame(gameForm)
-        toast.success(`Game created successfully${gameForm.type === 'nested' ? ' with 5 categories + special card' : ''}`)
+        // Create new game with category names if nested
+        const gameData = gameForm.type === 'nested' 
+          ? { ...gameForm, categoryNames }
+          : gameForm
+          
+        await strapiApi.createGame(gameData)
+        toast.success(`Game created successfully${gameForm.type === 'nested' ? ' with custom categories + special card' : ''}`)
       }
       
       await fetchGames()
       await fetchDashboardData()
       setShowGameForm(false)
       setEditingGame(null)
-      setGameForm({ name: '', description: '', type: 'straight', status: 'free' })
+      setGameForm({ name: '', description: '', type: 'straight', status: 'free', thumbnail: null })
+      setCategoryNames(['Category 1', 'Category 2', 'Category 3', 'Category 4', 'Category 5'])
     } catch (error: any) {
       console.error('Error saving game:', error)
       toast.error(error.response?.data?.error?.message || 'Failed to save game')
@@ -223,7 +238,8 @@ export default function AdminPage() {
       name: game.attributes.name,
       description: game.attributes.description,
       type: game.attributes.type,
-      status: game.attributes.status
+      status: game.attributes.status,
+      thumbnail: null
     })
     setShowGameForm(true)
   }
@@ -406,13 +422,10 @@ export default function AdminPage() {
           </form>
 
           <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-            <h4 className="font-semibold text-gray-900 mb-2">Demo Credentials:</h4>
-            <div className="text-sm text-gray-600 space-y-1">
-              <p><strong>Super Admin:</strong> superadmin@elitegames.com / SuperAdmin2024!</p>
-              <p><strong>Dev Admin:</strong> devadmin@elitegames.com / DevAdmin2024!</p>
-              <p><strong>Content Admin:</strong> contentadmin@elitegames.com / ContentAdmin2024!</p>
-              <p><strong>Shop Admin:</strong> shopadmin@elitegames.com / ShopAdmin2024!</p>
-              <p><strong>Customer Admin:</strong> customeradmin@elitegames.com / CustomerAdmin2024!</p>
+            <h4 className="font-semibold text-gray-900 mb-2">Production System:</h4>
+            <div className="text-sm text-gray-600">
+              <p>Please ensure your backend Strapi server is running on port 1337</p>
+              <p>Contact system administrator for proper credentials</p>
             </div>
           </div>
 
@@ -613,11 +626,11 @@ export default function AdminPage() {
             {/* Game Form Modal */}
             {showGameForm && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-2xl p-8 w-full max-w-md">
+                <div className="bg-white rounded-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                   <h3 className="text-2xl font-bold text-blue-900 mb-6">
                     {editingGame ? 'Edit Game' : 'Add New Game'}
                   </h3>
-                  <form onSubmit={handleGameSubmit} className="space-y-4">
+                  <form onSubmit={handleGameSubmit} className="space-y-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
                       <input
@@ -662,6 +675,69 @@ export default function AdminPage() {
                         </select>
                       </div>
                     </div>
+
+                    {/* Thumbnail Upload */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Game Thumbnail</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          if (e.target.files) {
+                            const file = e.target.files[0]
+                            setGameForm(prev => ({ ...prev, thumbnail: file }))
+                          }
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Upload a thumbnail image for the game (PNG, JPG, or WEBP)
+                      </p>
+                    </div>
+
+                    {/* Category Names Section for Nested Games */}
+                    {gameForm.type === 'nested' && !editingGame && (
+                      <div className="border border-purple-200 rounded-lg p-6 bg-purple-50">
+                        <div className="flex items-center gap-2 mb-4">
+                          <FolderIcon className="h-5 w-5 text-purple-600" />
+                          <h4 className="text-lg font-semibold text-purple-900">Category Names</h4>
+                        </div>
+                        <p className="text-sm text-purple-700 mb-4">
+                          Customise the names for your 5 categories. A special card will be automatically created as well.
+                        </p>
+                        <div className="grid grid-cols-2 gap-4">
+                          {categoryNames.map((name, index) => (
+                            <div key={index}>
+                              <label className="block text-sm font-medium text-purple-700 mb-1">
+                                Category {index + 1}
+                              </label>
+                              <input
+                                type="text"
+                                value={name}
+                                onChange={(e) => {
+                                  const newNames = [...categoryNames]
+                                  newNames[index] = e.target.value
+                                  setCategoryNames(newNames)
+                                }}
+                                className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                placeholder={`Enter name for category ${index + 1}`}
+                                required
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-4 p-3 bg-purple-100 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <SparklesIcon className="h-4 w-4 text-purple-600" />
+                            <span className="text-sm font-medium text-purple-800">Special Card</span>
+                          </div>
+                          <p className="text-xs text-purple-600 mt-1">
+                            A special card (Card 6) will be automatically created for unique challenges.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex gap-4 pt-4">
                       <button
                         type="submit"
@@ -679,7 +755,8 @@ export default function AdminPage() {
                         onClick={() => {
                           setShowGameForm(false)
                           setEditingGame(null)
-                          setGameForm({ name: '', description: '', type: 'straight', status: 'free' })
+                          setGameForm({ name: '', description: '', type: 'straight', status: 'free', thumbnail: null })
+                          setCategoryNames(['Category 1', 'Category 2', 'Category 3', 'Category 4', 'Category 5'])
                         }}
                         className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
                       >
