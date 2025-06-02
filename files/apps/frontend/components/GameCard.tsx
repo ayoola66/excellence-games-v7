@@ -2,33 +2,78 @@
 
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import { PlayIcon, LockClosedIcon, StarIcon } from '@heroicons/react/24/solid'
+import { useAuth } from '@/context/AuthContext'
+import { PlayIcon, LockClosedIcon, StarIcon, UserIcon } from '@heroicons/react/24/solid'
 
 interface Game {
   id: string
-  name: string
-  description: string
-  type: 'straight' | 'nested'
-  status: 'free' | 'premium'
-  thumbnail?: any
-  totalQuestions: number
-  accessType: 'free' | 'full' | 'locked'
+  attributes: {
+    name: string
+    description: string
+    type: 'straight' | 'nested'
+    status: 'free' | 'premium'
+    totalQuestions: number
+    thumbnail?: {
+      data?: {
+        attributes: {
+          url: string
+          name: string
+        }
+      }
+    }
+    categories?: any[]
+  }
 }
 
 export default function GameCard({ game }: { game: Game }) {
   const router = useRouter()
-  const isPremium = game.status === 'premium'
-  const isLocked = game.accessType === 'locked'
+  const { user } = useAuth()
+  const isPremium = game.attributes.status === 'premium'
+  
+  // Determine access type based on user status
+  const getAccessType = () => {
+    if (!user) return 'login'
+    if (game.attributes.status === 'free') return 'free'
+    if (user.subscriptionStatus === 'premium') return 'free'
+    return 'locked'
+  }
+  
+  const accessType = getAccessType()
+  const isLocked = accessType === 'locked'
+  const needsLogin = accessType === 'login'
+
+  const handleGameClick = () => {
+    if (needsLogin) {
+      // This could trigger a login modal or redirect to login
+      router.push('/login')
+      return
+    }
+    
+    if (!isLocked) {
+      router.push(`/game/${game.id}`)
+    }
+  }
+
+  const getThumbnailUrl = () => {
+    if (game.attributes.thumbnail?.data?.attributes?.url) {
+      const url = game.attributes.thumbnail.data.attributes.url
+      // Handle relative URLs from Strapi
+      return url.startsWith('http') ? url : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${url}`
+    }
+    return null
+  }
+
+  const thumbnailUrl = getThumbnailUrl()
 
   return (
     <div
       className={`game-card flex flex-col h-full relative group ${isPremium ? 'border-yellow-400' : ''}`}
     >
       <div className="relative h-48 w-full bg-gradient-to-br from-blue-100 to-indigo-200 flex items-center justify-center">
-        {game.thumbnail ? (
+        {thumbnailUrl ? (
           <img
-            src={typeof game.thumbnail === 'string' ? game.thumbnail : game.thumbnail.url}
-            alt={game.name}
+            src={thumbnailUrl}
+            alt={game.attributes.name}
             className="object-cover w-full h-full rounded-t-2xl"
           />
         ) : (
@@ -44,26 +89,31 @@ export default function GameCard({ game }: { game: Game }) {
             <LockClosedIcon className="h-4 w-4 mr-1 text-gray-500" /> Locked
           </span>
         )}
+        {needsLogin && (
+          <span className="absolute top-3 left-3 bg-blue-200 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full shadow border border-blue-300 flex items-center gap-1">
+            <UserIcon className="h-4 w-4 mr-1 text-blue-500" /> Login Required
+          </span>
+        )}
       </div>
       <div className="flex-1 flex flex-col p-6">
         <h3 className="text-xl font-bold text-blue-900 mb-2 group-hover:text-blue-700 transition-colors">
-          {game.name}
+          {game.attributes.name}
         </h3>
         <p className="text-gray-600 mb-4 line-clamp-3">
-          {game.description}
+          {game.attributes.description}
         </p>
         <div className="flex items-center justify-between mt-auto">
           <span className="text-sm text-gray-500">
-            {game.totalQuestions} questions
+            {game.attributes.totalQuestions} questions
           </span>
           <button
             className={`btn-primary flex items-center gap-2 text-sm px-4 py-2 ${isLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
             disabled={isLocked}
-            onClick={() => router.push(`/game/${game.id}`)}
-            aria-label={isLocked ? 'Locked' : 'Play game'}
+            onClick={handleGameClick}
+            aria-label={isLocked ? 'Locked' : needsLogin ? 'Login to play' : 'Play game'}
           >
             <PlayIcon className="h-5 w-5" />
-            {isLocked ? 'Locked' : 'Play'}
+            {isLocked ? 'Locked' : needsLogin ? 'Login to Play' : 'Play'}
           </button>
         </div>
       </div>

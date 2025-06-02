@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import Cookies from 'js-cookie'
 import toast from 'react-hot-toast'
-import { api } from '@/lib/api'
+import { strapiApi } from '@/lib/strapiApi'
 
 interface User {
   id: string
@@ -54,33 +54,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const token = Cookies.get('auth-token')
       const adminToken = Cookies.get('admin-token')
 
-      // Mock session validation - in demo mode we'll simulate valid sessions
+      // Check user session
       if (token) {
-        // Simulate getting user from token
-        const userData = {
-          id: '1',
-          email: 'user@example.com',
-          fullName: 'Demo User',
-          subscriptionStatus: 'free' as const,
-          gameProgress: {},
-          musicPreferences: {}
+        try {
+          // In a real app, we'd verify the token with the backend
+          // For now, we'll check if the token exists and is valid
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users/me`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+          
+          if (response.ok) {
+            const userData = await response.json()
+            setUser(userData)
+          } else {
+            // Token is invalid, clear it
+            Cookies.remove('auth-token')
+            localStorage.removeItem('auth-token')
+          }
+        } catch (error) {
+          // Backend not available, clear token
+          Cookies.remove('auth-token')
+          localStorage.removeItem('auth-token')
         }
-        setUser(userData)
       }
 
+      // Check admin session
       if (adminToken) {
         try {
-          const response = await api.verifyAdminSession(adminToken)
+          const response = await strapiApi.verifyAdminSession(adminToken)
           setAdmin(response.data.admin)
         } catch (error) {
           // Clear invalid admin token
           Cookies.remove('admin-token')
+          localStorage.removeItem('admin-token')
         }
       }
     } catch (error) {
-      // Clear invalid tokens
+      console.error('Session check failed:', error)
+      // Clear all tokens on error
       Cookies.remove('auth-token')
       Cookies.remove('admin-token')
+      localStorage.removeItem('auth-token')
+      localStorage.removeItem('admin-token')
     } finally {
       setIsLoading(false)
     }
@@ -88,22 +103,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const response = await api.login(email, password)
+      const response = await strapiApi.login(email, password)
       const { jwt, user: userData } = response
-
-      // Check for existing session warning (mock implementation)
-      if (userData.currentSessionToken && userData.currentSessionToken !== jwt) {
-        toast.error('More than one active session noticed. See you on the other side!')
-      }
 
       // Set token and user data
       Cookies.set('auth-token', jwt, { expires: 7 })
+      localStorage.setItem('auth-token', jwt)
       setUser(userData)
 
-      toast.success(`Welcome back, ${userData.fullName}!`)
+      toast.success(`Welcome back, ${userData.fullName || userData.username}!`)
       return true
     } catch (error: any) {
-      const message = error.message || 'Login failed'
+      const message = error.response?.data?.error?.message || error.message || 'Login failed'
       toast.error(message)
       return false
     }
@@ -111,16 +122,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const adminLogin = async (email: string, password: string): Promise<boolean> => {
     try {
-      const response = await api.adminLogin(email, password)
+      const response = await strapiApi.adminLogin(email, password)
       const { token, admin: adminData } = response.data
 
       Cookies.set('admin-token', token, { expires: 1 }) // 1 day expiry
+      localStorage.setItem('admin-token', token)
       setAdmin(adminData)
 
       toast.success(`Welcome, ${adminData.fullName}!`)
       return true
     } catch (error: any) {
-      const message = error.message || 'Admin login failed'
+      const message = error.response?.data?.error?.message || error.message || 'Admin login failed'
       toast.error(message)
       return false
     }
@@ -128,16 +140,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (userData: any): Promise<boolean> => {
     try {
-      const response = await api.register(userData)
+      const response = await strapiApi.register({
+        username: userData.email,
+        email: userData.email,
+        password: userData.password,
+        fullName: userData.fullName,
+        phone: userData.phone,
+        deliveryAddress: userData.deliveryAddress,
+      })
+      
       const { jwt, user: newUser } = response
 
       Cookies.set('auth-token', jwt, { expires: 7 })
+      localStorage.setItem('auth-token', jwt)
       setUser(newUser)
 
       toast.success('Account created successfully!')
       return true
     } catch (error: any) {
-      const message = error.message || 'Registration failed'
+      const message = error.response?.data?.error?.message || error.message || 'Registration failed'
       toast.error(message)
       return false
     }
@@ -145,6 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     Cookies.remove('auth-token')
+    localStorage.removeItem('auth-token')
     setUser(null)
     toast.success('Logged out successfully')
   }
@@ -152,11 +174,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const adminLogout = async () => {
     try {
       // In production, we'd call the logout endpoint
-      // For demo purposes, we'll just clear the tokens
+      // For now, we'll just clear the tokens
     } catch (error) {
       // Silent fail for logout
     } finally {
       Cookies.remove('admin-token')
+      localStorage.removeItem('admin-token')
       setAdmin(null)
       toast.success('Admin logged out successfully')
     }

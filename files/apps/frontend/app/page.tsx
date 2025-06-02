@@ -1,65 +1,113 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useAuth } from '@/context/AuthContext'
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { PlayIcon, UserIcon, CogIcon, StarIcon, CheckCircleIcon, ShieldCheckIcon } from '@heroicons/react/24/solid'
 import GameCard from '@/components/GameCard'
 import LoginModal from '@/components/LoginModal'
 import RegisterModal from '@/components/RegisterModal'
-import axios from 'axios'
+import { useAuth } from '@/context/AuthContext'
+import { strapiApi } from '@/lib/strapiApi'
 import { useRouter } from 'next/navigation'
+import {
+  PlayIcon,
+  TrophyIcon,
+  MusicalNoteIcon,
+  SparklesIcon,
+  UserGroupIcon,
+  LockClosedIcon,
+  StarIcon,
+  UserIcon,
+  CogIcon,
+  CheckCircleIcon,
+  ShieldCheckIcon,
+} from '@heroicons/react/24/outline'
+import toast from 'react-hot-toast'
 
 interface Game {
   id: string
-  name: string
-  description: string
-  type: 'straight' | 'nested'
-  status: 'free' | 'premium'
-  thumbnail?: any
-  totalQuestions: number
-  accessType: 'free' | 'full' | 'locked'
+  attributes: {
+    name: string
+    description: string
+    type: 'straight' | 'nested'
+    status: 'free' | 'premium'
+    totalQuestions: number
+    thumbnail?: {
+      data?: {
+        attributes: {
+          url: string
+          name: string
+        }
+      }
+    }
+    categories?: any[]
+  }
 }
 
 export default function HomePage() {
   const { user, isLoading } = useAuth()
-  const [games, setGames] = useState<Game[]>([])
-  const [showLogin, setShowLogin] = useState(false)
-  const [showRegister, setShowRegister] = useState(false)
-  const [gamesLoading, setGamesLoading] = useState(true)
   const router = useRouter()
+  const [games, setGames] = useState<Game[]>([])
+  const [gamesLoading, setGamesLoading] = useState(true)
+  const [showLoginModal, setShowLoginModal] = useState(false)
+  const [showRegisterModal, setShowRegisterModal] = useState(false)
 
   useEffect(() => {
     fetchGames()
-  }, [user])
+  }, [])
 
   const fetchGames = async () => {
     try {
-      const response = await axios.get('/api/games')
-      const gamesData = response.data.data
-      
-      // Update access type based on user status
-      const updatedGames = gamesData.map((game: Game) => ({
-        ...game,
-        accessType: user?.subscriptionStatus === 'premium' 
-          ? 'full' 
-          : game.status === 'free' 
-          ? 'free' 
-          : 'locked'
-      }))
-      
-      setGames(updatedGames)
+      setGamesLoading(true)
+      const response = await strapiApi.getGames()
+      setGames(response.data || [])
     } catch (error) {
-      console.error('Failed to fetch games:', error)
+      console.error('Error fetching games:', error)
+      toast.error('Failed to load games')
     } finally {
       setGamesLoading(false)
     }
   }
 
+  const getGameAccessType = (game: Game) => {
+    if (!user) return 'login'
+    if (game.attributes.status === 'free') return 'free'
+    if (user.subscriptionStatus === 'premium') return 'free'
+    return 'locked'
+  }
+
+  const getGameCategoriesData = (game: Game) => {
+    if (game.attributes.type === 'straight') {
+      return game.attributes.categories?.map((cat: any, index: number) => ({
+        id: cat.id || `cat-${index}`,
+        name: cat.attributes?.name || cat.name || `Category ${index + 1}`,
+        questionCount: cat.attributes?.questionCount || cat.questionCount || 0
+      })) || []
+    } else {
+      // For nested games, return card-based structure
+      return game.attributes.categories?.map((cat: any, index: number) => ({
+        id: cat.id || `card-${index}`,
+        name: cat.attributes?.name || cat.name || `Card ${index + 1}`,
+        questionCount: cat.attributes?.questionCount || cat.questionCount || 0,
+        cardNumber: cat.attributes?.cardNumber || cat.cardNumber || index + 1
+      })) || []
+    }
+  }
+
+  const openLoginModal = () => {
+    setShowRegisterModal(false)
+    setShowLoginModal(true)
+  }
+
+  const openRegisterModal = () => {
+    setShowLoginModal(false)
+    setShowRegisterModal(true)
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-800"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     )
   }
@@ -109,13 +157,13 @@ export default function HomePage() {
               ) : (
                 <div className="flex items-center space-x-3">
                   <button 
-                    onClick={() => setShowLogin(true)}
+                    onClick={() => setShowLoginModal(true)}
                     className="btn-secondary"
                   >
                     Sign In
                   </button>
                   <button 
-                    onClick={() => setShowRegister(true)}
+                    onClick={() => setShowRegisterModal(true)}
                     className="btn-primary"
                   >
                     Get Started
@@ -148,7 +196,7 @@ export default function HomePage() {
               {!user && (
                 <>
                   <button 
-                    onClick={() => setShowRegister(true)}
+                    onClick={() => setShowRegisterModal(true)}
                     className="bg-yellow-400 text-blue-900 font-bold py-4 px-8 rounded-xl hover:bg-yellow-300 transition-all duration-200 shadow-lg hover:shadow-xl text-lg"
                   >
                     Start Playing Free
@@ -289,24 +337,24 @@ export default function HomePage() {
       </section>
 
       {/* Modals */}
-      {showLogin && (
+      {showLoginModal && (
         <LoginModal 
-          isOpen={showLogin} 
-          onClose={() => setShowLogin(false)}
+          isOpen={showLoginModal} 
+          onClose={() => setShowLoginModal(false)}
           onSwitchToRegister={() => {
-            setShowLogin(false)
-            setShowRegister(true)
+            setShowLoginModal(false)
+            setShowRegisterModal(true)
           }}
         />
       )}
       
-      {showRegister && (
+      {showRegisterModal && (
         <RegisterModal 
-          isOpen={showRegister} 
-          onClose={() => setShowRegister(false)}
+          isOpen={showRegisterModal} 
+          onClose={() => setShowRegisterModal(false)}
           onSwitchToLogin={() => {
-            setShowRegister(false)
-            setShowLogin(true)
+            setShowRegisterModal(false)
+            setShowLoginModal(true)
           }}
         />
       )}
