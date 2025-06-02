@@ -58,32 +58,40 @@ export const strapiApi = {
     try {
       let response
       
-      // If thumbnail is provided, use multipart form data
-      if (gameData.thumbnail) {
-        const formData = new FormData()
+      // For nested games, use the specialized endpoint
+      if (gameData.type === 'nested') {
+        const nestedGameData = {
+          name: gameData.name,
+          description: gameData.description,
+          status: gameData.status,
+          categoryNames: gameData.categoryNames
+        }
         
-        // Append game data (excluding thumbnail)
-        const { thumbnail, ...gameDataWithoutThumbnail } = gameData
-        formData.append('data', JSON.stringify(gameDataWithoutThumbnail))
-        
-        // Append thumbnail file
-        formData.append('files.thumbnail', thumbnail)
-        
-        response = await apiClient.post('/api/games', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        })
+        response = await apiClient.post('/api/games/create-nested', nestedGameData)
       } else {
-        // Standard JSON request without thumbnail
-        response = await apiClient.post('/api/games', {
-          data: gameData
-        })
-      }
-      
-      // If it's a nested game, create the categories automatically
-      if (gameData.type === 'nested' && response.data?.data?.id) {
-        await this.createNestedGameCategories(response.data.data.id, gameData.categoryNames)
+        // For straight games, use the standard approach
+        // If thumbnail is provided, use multipart form data
+        if (gameData.thumbnail) {
+          const formData = new FormData()
+          
+          // Append game data (excluding thumbnail)
+          const { thumbnail, ...gameDataWithoutThumbnail } = gameData
+          formData.append('data', JSON.stringify(gameDataWithoutThumbnail))
+          
+          // Append thumbnail file
+          formData.append('files.thumbnail', thumbnail)
+          
+          response = await apiClient.post('/api/games', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          })
+        } else {
+          // Standard JSON request without thumbnail
+          response = await apiClient.post('/api/games', {
+            data: gameData
+          })
+        }
       }
       
       return response.data
@@ -106,49 +114,6 @@ export const strapiApi = {
   },
 
   // ============= CATEGORY OPERATIONS =============
-
-  async createNestedGameCategories(gameId: string, categoryNames?: string[]) {
-    try {
-      const defaultNames = [
-        'Category 1',
-        'Category 2', 
-        'Category 3',
-        'Category 4',
-        'Category 5'
-      ]
-      
-      const namesToUse = categoryNames || defaultNames
-      
-      // Create categories 1-5 with custom or default names
-      for (let i = 0; i < 5; i++) {
-        await apiClient.post('/api/categories', {
-          data: {
-            name: namesToUse[i] || `Category ${i + 1}`,
-            description: `Questions for ${namesToUse[i] || `Category ${i + 1}`}`,
-            cardNumber: i + 1,
-            game: gameId,
-            questionCount: 0
-          }
-        })
-      }
-      
-      // Create special card (Card 6)
-      await apiClient.post('/api/categories', {
-        data: {
-          name: 'Special Card',
-          description: 'Special challenges and unique questions',
-          cardNumber: 6,
-          game: gameId,
-          questionCount: 0
-        }
-      })
-      
-      console.log(`Created 6 categories for nested game ${gameId}`)
-    } catch (error: any) {
-      console.error('Error creating nested game categories:', error)
-      // Don't throw here as the game was already created successfully
-    }
-  },
 
   async getCategories(gameId?: string) {
     const filters = gameId ? `?filters[game][id][$eq]=${gameId}&populate=questions` : '?populate=questions'
