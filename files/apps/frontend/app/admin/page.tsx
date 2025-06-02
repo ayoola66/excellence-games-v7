@@ -356,9 +356,9 @@ export default function AdminPage() {
           <div className="mt-8 p-4 bg-gray-50 rounded-lg">
             <h4 className="font-semibold text-gray-900 mb-2">Demo Credentials:</h4>
             <div className="text-sm text-gray-600 space-y-1">
-              <p><strong>Super Admin:</strong> superadmin@elitegames.com / SuperAdmin2024!</p>
-              <p><strong>Dev Admin:</strong> devadmin@elitegames.com / DevAdmin2024!</p>
-              <p><strong>Content Admin:</strong> contentadmin@elitegames.com / ContentAdmin2024!</p>
+              <p><strong>Super Admin:</strong> superadmin@targetedgames.com / SuperAdmin2024!</p>
+              <p><strong>Dev Admin:</strong> devadmin@targetedgames.com / DevAdmin2024!</p>
+              <p><strong>Content Admin:</strong> contentadmin@targetedgames.com / ContentAdmin2024!</p>
             </div>
           </div>
 
