@@ -2,9 +2,14 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/context/AuthContext'
-import { Toaster } from 'react-hot-toast'
+import dynamic from 'next/dynamic'
 
 const inter = Inter({ subsets: ['latin'] })
+
+const Toaster = dynamic(
+  () => import('react-hot-toast').then((mod) => mod.Toaster),
+  { ssr: false }
+)
 
 export const metadata: Metadata = {
   title: 'Elite Games Trivia Platform',
