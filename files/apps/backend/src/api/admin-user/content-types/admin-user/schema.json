@@ -8,15 +8,10 @@
     "description": "Admin user profiles with role-based permissions"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
-    "username": {
-      "type": "string",
-      "required": true,
-      "unique": true
-    },
     "email": {
       "type": "email",
       "required": true,
@@ -26,22 +21,19 @@
       "type": "password",
       "required": true
     },
-    "firstName": {
+    "fullName": {
       "type": "string",
       "required": true
     },
-    "lastName": {
-      "type": "string",
-      "required": true
-    },
-    "role": {
+    "adminType": {
       "type": "enumeration",
       "enum": ["SA", "DEV", "SH", "CT", "CS"],
       "default": "CS",
       "required": true
     },
-    "department": {
-      "type": "string"
+    "badge": {
+      "type": "string",
+      "required": true
     },
     "permissions": {
       "type": "json",
@@ -54,10 +46,8 @@
     "lastLogin": {
       "type": "datetime"
     },
-    "createdBy": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::admin-user.admin-user"
+    "sessionToken": {
+      "type": "text"
     },
     "profilePicture": {
       "type": "media",

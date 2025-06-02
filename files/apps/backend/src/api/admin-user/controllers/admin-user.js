@@ -19,19 +19,25 @@ module.exports = createCoreController('api::admin-user.admin-user', ({ strapi })
 
     try {
       // Find admin user
-      const admin = await strapi.entityService.findMany('api::admin-user.admin-user', {
+      const admins = await strapi.entityService.findMany('api::admin-user.admin-user', {
         filters: { email, isActive: true },
         limit: 1,
       });
 
-      if (!admin.data.length) {
+      console.log('Found admins:', admins?.length);
+
+      if (!admins || admins.length === 0) {
+        console.log('No admin found with email:', email);
         return ctx.unauthorized('Invalid credentials');
       }
 
-      const adminUser = admin.data[0];
+      const adminUser = admins[0];
+      console.log('Admin user found:', { id: adminUser.id, email: adminUser.email, hasPassword: !!adminUser.password });
 
       // Verify password
       const isValidPassword = await bcrypt.compare(password, adminUser.password);
+      console.log('Password valid:', isValidPassword);
+      
       if (!isValidPassword) {
         return ctx.unauthorized('Invalid credentials');
       }
@@ -72,6 +78,7 @@ module.exports = createCoreController('api::admin-user.admin-user', ({ strapi })
         },
       };
     } catch (error) {
+      console.error('Login error:', error);
       ctx.throw(500, 'Login failed');
     }
   },
@@ -125,7 +132,7 @@ module.exports = createCoreController('api::admin-user.admin-user', ({ strapi })
           filters: { email: adminData.email },
         });
 
-        if (!existing.data.length) {
+        if (!existing || existing.length === 0) {
           // Hash password
           const hashedPassword = await bcrypt.hash(adminData.password, 10);
           
@@ -135,6 +142,7 @@ module.exports = createCoreController('api::admin-user.admin-user', ({ strapi })
               ...adminData,
               password: hashedPassword,
               permissions: getAdminPermissions(adminData.adminType),
+              isActive: true,
             },
           });
 
@@ -153,6 +161,7 @@ module.exports = createCoreController('api::admin-user.admin-user', ({ strapi })
         },
       };
     } catch (error) {
+      console.error('Seed admin error:', error);
       ctx.throw(500, 'Failed to seed admin users');
     }
   },
@@ -240,10 +249,10 @@ module.exports = createCoreController('api::admin-user.admin-user', ({ strapi })
         });
         
         dashboardData.games = {
-          total: games.data.length,
-          free: games.data.filter(g => g.status === 'free').length,
-          premium: games.data.filter(g => g.status === 'premium').length,
-          totalQuestions: games.data.reduce((total, game) => 
+          total: games.length,
+          free: games.filter(g => g.status === 'free').length,
+          premium: games.filter(g => g.status === 'premium').length,
+          totalQuestions: games.reduce((total, game) => 
             total + (game.categories?.reduce((catTotal, cat) => 
               catTotal + (cat.questions?.length || 0), 0) || 0), 0),
         };
@@ -254,9 +263,9 @@ module.exports = createCoreController('api::admin-user.admin-user', ({ strapi })
         const users = await strapi.entityService.findMany('plugin::users-permissions.user');
         
         dashboardData.users = {
-          total: users.data.length,
-          premium: users.data.filter(u => u.subscriptionStatus === 'premium').length,
-          free: users.data.filter(u => u.subscriptionStatus === 'free').length,
+          total: users.length,
+          premium: users.filter(u => u.subscriptionStatus === 'premium').length,
+          free: users.filter(u => u.subscriptionStatus === 'free').length,
         };
       }
 
@@ -266,9 +275,9 @@ module.exports = createCoreController('api::admin-user.admin-user', ({ strapi })
         const userMusic = await strapi.entityService.findMany('api::user-music.user-music');
         
         dashboardData.music = {
-          backgroundTracks: backgroundMusic.data.length,
-          userTracks: userMusic.data.length,
-          activeTracks: backgroundMusic.data.filter(m => m.isActive).length,
+          backgroundTracks: backgroundMusic.length,
+          userTracks: userMusic.length,
+          activeTracks: backgroundMusic.filter(m => m.isActive).length,
         };
       }
 
@@ -276,7 +285,7 @@ module.exports = createCoreController('api::admin-user.admin-user', ({ strapi })
     } catch (error) {
       ctx.throw(500, 'Failed to fetch dashboard data');
     }
-  },
+  }
 }));
 
 // Helper function to define permissions based on admin type

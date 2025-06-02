@@ -371,9 +371,13 @@ export interface ApiAdminUserAdminUser extends Schema.CollectionType {
     singularName: 'admin-user';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
+    adminType: Attribute.Enumeration<['SA', 'DEV', 'SH', 'CT', 'CS']> &
+      Attribute.Required &
+      Attribute.DefaultTo<'CS'>;
+    badge: Attribute.String & Attribute.Required;
     createdAt: Attribute.DateTime;
     createdBy: Attribute.Relation<
       'api::admin-user.admin-user',
@@ -381,19 +385,14 @@ export interface ApiAdminUserAdminUser extends Schema.CollectionType {
       'admin::user'
     > &
       Attribute.Private;
-    department: Attribute.String;
     email: Attribute.Email & Attribute.Required & Attribute.Unique;
-    firstName: Attribute.String & Attribute.Required;
+    fullName: Attribute.String & Attribute.Required;
     isActive: Attribute.Boolean & Attribute.DefaultTo<true>;
     lastLogin: Attribute.DateTime;
-    lastName: Attribute.String & Attribute.Required;
     password: Attribute.Password & Attribute.Required;
     permissions: Attribute.JSON;
     profilePicture: Attribute.Media<'images'>;
-    publishedAt: Attribute.DateTime;
-    role: Attribute.Enumeration<['SA', 'DEV', 'SH', 'CT', 'CS']> &
-      Attribute.Required &
-      Attribute.DefaultTo<'CS'>;
+    sessionToken: Attribute.Text;
     updatedAt: Attribute.DateTime;
     updatedBy: Attribute.Relation<
       'api::admin-user.admin-user',
@@ -401,7 +400,6 @@ export interface ApiAdminUserAdminUser extends Schema.CollectionType {
       'admin::user'
     > &
       Attribute.Private;
-    username: Attribute.String & Attribute.Required & Attribute.Unique;
   };
 }
 
