@@ -18,7 +18,7 @@
       "unique": true
     },
     "password": {
-      "type": "password",
+      "type": "text",
       "required": true
     },
     "fullName": {

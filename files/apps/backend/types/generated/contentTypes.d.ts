@@ -389,7 +389,7 @@ export interface ApiAdminUserAdminUser extends Schema.CollectionType {
     fullName: Attribute.String & Attribute.Required;
     isActive: Attribute.Boolean & Attribute.DefaultTo<true>;
     lastLogin: Attribute.DateTime;
-    password: Attribute.Password & Attribute.Required;
+    password: Attribute.Text & Attribute.Required;
     permissions: Attribute.JSON;
     profilePicture: Attribute.Media<'images'>;
     sessionToken: Attribute.Text;

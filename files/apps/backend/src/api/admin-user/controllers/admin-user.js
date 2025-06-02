@@ -285,6 +285,78 @@ module.exports = createCoreController('api::admin-user.admin-user', ({ strapi })
     } catch (error) {
       ctx.throw(500, 'Failed to fetch dashboard data');
     }
+  },
+
+  // Reset admin password (for debugging)
+  async resetPassword(ctx) {
+    const { email, newPassword } = ctx.request.body;
+    
+    if (!email || !newPassword) {
+      return ctx.badRequest('Email and new password are required');
+    }
+
+    try {
+      // Find admin user
+      const admins = await strapi.entityService.findMany('api::admin-user.admin-user', {
+        filters: { email },
+        limit: 1,
+      });
+
+      if (!admins || admins.length === 0) {
+        return ctx.notFound('Admin not found');
+      }
+
+      const adminUser = admins[0];
+      
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      
+      // Update password
+      await strapi.entityService.update('api::admin-user.admin-user', adminUser.id, {
+        data: {
+          password: hashedPassword,
+        },
+      });
+
+      return {
+        data: {
+          message: 'Password updated successfully',
+          email: adminUser.email,
+        },
+      };
+    } catch (error) {
+      console.error('Reset password error:', error);
+      ctx.throw(500, 'Failed to reset password');
+    }
+  },
+
+  // Test admin users (for debugging)
+  async testAdmins(ctx) {
+    try {
+      const admins = await strapi.entityService.findMany('api::admin-user.admin-user', {
+        limit: 10,
+      });
+
+      const adminInfo = admins.map(admin => ({
+        id: admin.id,
+        email: admin.email,
+        fullName: admin.fullName,
+        adminType: admin.adminType,
+        isActive: admin.isActive,
+        hasPassword: !!admin.password,
+        passwordLength: admin.password ? admin.password.length : 0,
+      }));
+
+      return {
+        data: {
+          count: admins.length,
+          admins: adminInfo,
+        },
+      };
+    } catch (error) {
+      console.error('Test admin error:', error);
+      ctx.throw(500, 'Failed to test admin users');
+    }
   }
 }));
 
