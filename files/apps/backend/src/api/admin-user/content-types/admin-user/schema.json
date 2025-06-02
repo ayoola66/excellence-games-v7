@@ -1,19 +1,68 @@
 {
-  "collectionName": "admin_users",
+  "kind": "collectionType",
+  "collectionName": "admin_user_profiles",
   "info": {
     "singularName": "admin-user",
     "pluralName": "admin-users",
-    "displayName": "Admin User"
+    "displayName": "Admin User",
+    "description": "Admin user profiles with role-based permissions"
   },
-  "options": { "draftAndPublish": false },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
   "attributes": {
-    "email": { "type": "email", "required": true, "unique": true },
-    "name": { "type": "string", "required": true },
-    "role": {
-      "type": "enumeration",
-      "enum": ["superadmin", "devadmin", "shopadmin", "contentadmin", "customeradmin"],
+    "username": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "email": {
+      "type": "email",
+      "required": true,
+      "unique": true
+    },
+    "password": {
+      "type": "password",
       "required": true
     },
-    "password": { "type": "password", "required": true }
+    "firstName": {
+      "type": "string",
+      "required": true
+    },
+    "lastName": {
+      "type": "string",
+      "required": true
+    },
+    "role": {
+      "type": "enumeration",
+      "enum": ["SA", "DEV", "SH", "CT", "CS"],
+      "default": "CS",
+      "required": true
+    },
+    "department": {
+      "type": "string"
+    },
+    "permissions": {
+      "type": "json",
+      "description": "Role-based permissions matrix"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "lastLogin": {
+      "type": "datetime"
+    },
+    "createdBy": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::admin-user.admin-user"
+    },
+    "profilePicture": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    }
   }
 }

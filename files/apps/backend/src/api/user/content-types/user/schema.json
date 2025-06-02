@@ -1,13 +1,74 @@
 {
-  "collectionName": "users",
-  "info": { "singularName": "user", "pluralName": "users", "displayName": "User" },
-  "options": { "draftAndPublish": false },
+  "kind": "collectionType",
+  "collectionName": "game_users",
+  "info": {
+    "singularName": "user",
+    "pluralName": "users",
+    "displayName": "Game User",
+    "description": "Extended user profiles for the trivia platform"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
   "attributes": {
-    "email": { "type": "email", "required": true, "unique": true },
-    "name": { "type": "string", "required": true },
-    "phone": { "type": "string" },
-    "address": { "type": "string" },
-    "subscriptionStatus": { "type": "enumeration", "enum": ["free", "premium"], "default": "free" },
-    "premiumExpiry": { "type": "datetime" }
+    "email": {
+      "type": "email",
+      "required": true,
+      "unique": true
+    },
+    "username": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "subscriptionType": {
+      "type": "enumeration",
+      "enum": ["free", "premium"],
+      "default": "free",
+      "required": true
+    },
+    "subscriptionExpiry": {
+      "type": "datetime",
+      "description": "When premium subscription expires"
+    },
+    "profile": {
+      "type": "component",
+      "component": "user.profile",
+      "repeatable": false
+    },
+    "gameStats": {
+      "type": "json",
+      "description": "Game statistics and progress tracking"
+    },
+    "preferences": {
+      "type": "json",
+      "description": "User preferences for gameplay and interface"
+    },
+    "achievements": {
+      "type": "json",
+      "description": "Unlocked achievements and badges"
+    },
+    "lastGamePlayed": {
+      "type": "datetime"
+    },
+    "totalScore": {
+      "type": "integer",
+      "default": 0
+    },
+    "gamesCompleted": {
+      "type": "integer",
+      "default": 0
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "registrationDate": {
+      "type": "datetime"
+    },
+    "lastLogin": {
+      "type": "datetime"
+    }
   }
 }

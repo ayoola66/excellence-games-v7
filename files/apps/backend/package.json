@@ -1,0 +1,41 @@
+{
+  "name": "targeted-games-backend",
+  "version": "1.0.0",
+  "description": "Elite Games Trivia Platform Backend",
+  "main": "index.js",
+  "scripts": {
+    "develop": "strapi develop",
+    "start": "strapi start",
+    "build": "strapi build",
+    "strapi": "strapi"
+  },
+  "dependencies": {
+    "@strapi/plugin-documentation": "^4.25.0",
+    "@strapi/plugin-email": "^4.25.0",
+    "@strapi/plugin-upload": "^4.25.0",
+    "@strapi/plugin-users-permissions": "^4.25.0",
+    "@strapi/provider-email-nodemailer": "^4.25.0",
+    "@strapi/provider-upload-local": "^4.25.0",
+    "@strapi/strapi": "^4.25.0",
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^9.0.0",
+    "csv-parser": "^3.0.0",
+    "jsonwebtoken": "^9.0.0",
+    "multer": "^2.0.0",
+    "nodemailer": "^6.9.0",
+    "pg": "^8.11.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^5.3.4",
+    "stripe": "^12.18.0",
+    "styled-components": "^5.3.11",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0 <=22.x.x",
+    "npm": ">=6.0.0"
+  }
+}

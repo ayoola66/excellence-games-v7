@@ -1,24 +1,82 @@
 {
+  "kind": "collectionType",
   "collectionName": "questions",
   "info": {
-    "name": "Question"
+    "singularName": "question",
+    "pluralName": "questions",
+    "displayName": "Question",
+    "description": "Trivia questions with multiple choice answers"
   },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
   "attributes": {
-    "question": { "type": "text", "required": true },
-    "options": { "type": "json", "required": true },
-    "correctAnswer": { "type": "string", "required": true },
-    "difficulty": { "type": "enumeration", "enum": ["easy", "medium", "hard"] },
-    "explanation": { "type": "text" },
-    "tags": { "type": "json" },
+    "question": {
+      "type": "text",
+      "required": true
+    },
+    "option1": {
+      "type": "string",
+      "required": true
+    },
+    "option2": {
+      "type": "string",
+      "required": true
+    },
+    "option3": {
+      "type": "string",
+      "required": true
+    },
+    "option4": {
+      "type": "string",
+      "required": true
+    },
+    "correctAnswer": {
+      "type": "enumeration",
+      "enum": ["option1", "option2", "option3", "option4"],
+      "required": true
+    },
+    "explanation": {
+      "type": "text",
+      "description": "Optional explanation for the correct answer"
+    },
+    "difficulty": {
+      "type": "enumeration",
+      "enum": ["easy", "medium", "hard"],
+      "default": "medium"
+    },
+    "tags": {
+      "type": "json",
+      "description": "Array of tags for organization"
+    },
     "category": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "api::category.category"
+      "target": "api::category.category",
+      "inversedBy": "questions"
     },
     "game": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "api::game.game"
+      "target": "api::game.game",
+      "inversedBy": "questions"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "sortOrder": {
+      "type": "integer",
+      "default": 0
+    },
+    "timesAnswered": {
+      "type": "integer",
+      "default": 0
+    },
+    "timesCorrect": {
+      "type": "integer",
+      "default": 0
     }
   }
 }
