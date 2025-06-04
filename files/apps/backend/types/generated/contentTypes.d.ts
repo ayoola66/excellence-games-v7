@@ -517,7 +517,7 @@ export interface ApiGameGame extends Schema.CollectionType {
       Attribute.Private;
     description: Attribute.Text;
     isActive: Attribute.Boolean & Attribute.DefaultTo<true>;
-    name: Attribute.String & Attribute.Required & Attribute.Unique;
+    name: Attribute.String & Attribute.Required;
     questions: Attribute.Relation<
       'api::game.game',
       'oneToMany',
@@ -535,6 +535,203 @@ export interface ApiGameGame extends Schema.CollectionType {
     updatedAt: Attribute.DateTime;
     updatedBy: Attribute.Relation<'api::game.game', 'oneToOne', 'admin::user'> &
       Attribute.Private;
+  };
+}
+
+export interface ApiOrderOrder extends Schema.CollectionType {
+  collectionName: 'orders';
+  info: {
+    description: 'Customer orders and purchases';
+    displayName: 'Order';
+    pluralName: 'orders';
+    singularName: 'order';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    billingAddress: Attribute.JSON;
+    createdAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::order.order',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    currency: Attribute.String &
+      Attribute.Required &
+      Attribute.DefaultTo<'GBP'>;
+    deliveredAt: Attribute.DateTime;
+    grantedPremiumAccess: Attribute.Boolean & Attribute.DefaultTo<false>;
+    notes: Attribute.Text;
+    orderNumber: Attribute.String & Attribute.Required & Attribute.Unique;
+    paymentMethod: Attribute.String & Attribute.DefaultTo<'stripe'>;
+    paymentStatus: Attribute.Enumeration<
+      ['pending', 'paid', 'failed', 'refunded', 'partially_refunded']
+    > &
+      Attribute.Required &
+      Attribute.DefaultTo<'pending'>;
+    premiumExpiresAt: Attribute.DateTime;
+    premiumGrantedAt: Attribute.DateTime;
+    productDetails: Attribute.JSON & Attribute.Required;
+    products: Attribute.Relation<
+      'api::order.order',
+      'manyToMany',
+      'api::product.product'
+    >;
+    shippedAt: Attribute.DateTime;
+    shipping: Attribute.Decimal &
+      Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Attribute.DefaultTo<0>;
+    shippingAddress: Attribute.JSON;
+    status: Attribute.Enumeration<
+      ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded']
+    > &
+      Attribute.Required &
+      Attribute.DefaultTo<'pending'>;
+    stripeChargeId: Attribute.String;
+    stripePaymentIntentId: Attribute.String;
+    subtotal: Attribute.Decimal &
+      Attribute.Required &
+      Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    tax: Attribute.Decimal &
+      Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Attribute.DefaultTo<0>;
+    total: Attribute.Decimal &
+      Attribute.Required &
+      Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    trackingNumber: Attribute.String;
+    updatedAt: Attribute.DateTime;
+    updatedBy: Attribute.Relation<
+      'api::order.order',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    user: Attribute.Relation<
+      'api::order.order',
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+}
+
+export interface ApiProductProduct extends Schema.CollectionType {
+  collectionName: 'products';
+  info: {
+    description: 'Shop products including board games and accessories';
+    displayName: 'Product';
+    pluralName: 'products';
+    singularName: 'product';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    category: Attribute.String &
+      Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    createdAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::product.product',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    description: Attribute.RichText & Attribute.Required;
+    dimensions: Attribute.JSON;
+    features: Attribute.JSON;
+    grantsPremiumAccess: Attribute.Boolean & Attribute.DefaultTo<false>;
+    images: Attribute.Media<'images', true>;
+    isActive: Attribute.Boolean &
+      Attribute.Required &
+      Attribute.DefaultTo<true>;
+    isFeatured: Attribute.Boolean & Attribute.DefaultTo<false>;
+    name: Attribute.String &
+      Attribute.Required &
+      Attribute.SetMinMaxLength<{
+        maxLength: 255;
+      }>;
+    premiumDurationMonths: Attribute.Integer &
+      Attribute.SetMinMax<
+        {
+          min: 1;
+        },
+        number
+      > &
+      Attribute.DefaultTo<12>;
+    price: Attribute.Decimal &
+      Attribute.Required &
+      Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    salePrice: Attribute.Decimal &
+      Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    shortDescription: Attribute.Text &
+      Attribute.SetMinMaxLength<{
+        maxLength: 500;
+      }>;
+    sku: Attribute.String & Attribute.Required & Attribute.Unique;
+    sortOrder: Attribute.Integer & Attribute.DefaultTo<0>;
+    specifications: Attribute.JSON;
+    stock: Attribute.Integer &
+      Attribute.Required &
+      Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Attribute.DefaultTo<0>;
+    tags: Attribute.JSON;
+    type: Attribute.Enumeration<
+      ['board_game', 'accessory', 'expansion', 'merchandise', 'other']
+    > &
+      Attribute.Required &
+      Attribute.DefaultTo<'board_game'>;
+    updatedAt: Attribute.DateTime;
+    updatedBy: Attribute.Relation<
+      'api::product.product',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    weight: Attribute.Decimal &
+      Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
   };
 }
 
@@ -566,8 +763,6 @@ export interface ApiQuestionQuestion extends Schema.CollectionType {
       'admin::user'
     > &
       Attribute.Private;
-    difficulty: Attribute.Enumeration<['easy', 'medium', 'hard']> &
-      Attribute.DefaultTo<'medium'>;
     explanation: Attribute.Text;
     game: Attribute.Relation<
       'api::question.question',
@@ -588,6 +783,86 @@ export interface ApiQuestionQuestion extends Schema.CollectionType {
     updatedAt: Attribute.DateTime;
     updatedBy: Attribute.Relation<
       'api::question.question',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
+export interface ApiShopSettingShopSetting extends Schema.SingleType {
+  collectionName: 'shop_settings';
+  info: {
+    description: 'Shop configuration and payment settings';
+    displayName: 'Shop Settings';
+    pluralName: 'shop-settings';
+    singularName: 'shop-setting';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    additionalBoardGamePrice: Attribute.Decimal &
+      Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Attribute.DefaultTo<25>;
+    createdAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::shop-setting.shop-setting',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    currency: Attribute.String & Attribute.DefaultTo<'GBP'>;
+    firstBoardGamePrice: Attribute.Decimal &
+      Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Attribute.DefaultTo<40>;
+    freeShippingThreshold: Attribute.Decimal &
+      Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Attribute.DefaultTo<50>;
+    maintenanceMessage: Attribute.Text;
+    maintenanceMode: Attribute.Boolean & Attribute.DefaultTo<false>;
+    privacyPolicy: Attribute.RichText;
+    returnPolicy: Attribute.RichText;
+    shopEnabled: Attribute.Boolean & Attribute.DefaultTo<true>;
+    standardShippingCost: Attribute.Decimal &
+      Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Attribute.DefaultTo<5.99>;
+    stripePublishableKey: Attribute.String;
+    stripeSecretKey: Attribute.Password;
+    stripeWebhookSecret: Attribute.Password;
+    taxRate: Attribute.Decimal &
+      Attribute.SetMinMax<
+        {
+          max: 1;
+          min: 0;
+        },
+        number
+      > &
+      Attribute.DefaultTo<0.2>;
+    termsAndConditions: Attribute.RichText;
+    updatedAt: Attribute.DateTime;
+    updatedBy: Attribute.Relation<
+      'api::shop-setting.shop-setting',
       'oneToOne',
       'admin::user'
     > &
@@ -1010,9 +1285,9 @@ export interface PluginUsersPermissionsUser extends Schema.CollectionType {
   };
   options: {
     draftAndPublish: false;
-    timestamps: true;
   };
   attributes: {
+    address: Attribute.Text;
     blocked: Attribute.Boolean & Attribute.DefaultTo<false>;
     confirmationToken: Attribute.String & Attribute.Private;
     confirmed: Attribute.Boolean & Attribute.DefaultTo<false>;
@@ -1028,11 +1303,14 @@ export interface PluginUsersPermissionsUser extends Schema.CollectionType {
       Attribute.SetMinMaxLength<{
         minLength: 6;
       }>;
+    fullName: Attribute.String;
     password: Attribute.Password &
       Attribute.Private &
       Attribute.SetMinMaxLength<{
         minLength: 6;
       }>;
+    phone: Attribute.String;
+    premiumExpiry: Attribute.Date;
     provider: Attribute.String;
     resetPasswordToken: Attribute.String & Attribute.Private;
     role: Attribute.Relation<
@@ -1040,6 +1318,9 @@ export interface PluginUsersPermissionsUser extends Schema.CollectionType {
       'manyToOne',
       'plugin::users-permissions.role'
     >;
+    subscriptionStatus: Attribute.Enumeration<['free', 'premium']> &
+      Attribute.Required &
+      Attribute.DefaultTo<'free'>;
     updatedAt: Attribute.DateTime;
     updatedBy: Attribute.Relation<
       'plugin::users-permissions.user',
@@ -1070,7 +1351,10 @@ declare module '@strapi/types' {
       'api::background-music.background-music': ApiBackgroundMusicBackgroundMusic;
       'api::category.category': ApiCategoryCategory;
       'api::game.game': ApiGameGame;
+      'api::order.order': ApiOrderOrder;
+      'api::product.product': ApiProductProduct;
       'api::question.question': ApiQuestionQuestion;
+      'api::shop-setting.shop-setting': ApiShopSettingShopSetting;
       'api::user-music.user-music': ApiUserMusicUserMusic;
       'api::user.user': ApiUserUser;
       'plugin::content-releases.release': PluginContentReleasesRelease;

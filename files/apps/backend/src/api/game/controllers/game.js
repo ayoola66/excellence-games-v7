@@ -10,20 +10,69 @@ module.exports = createCoreController('api::game.game', ({ strapi }) => ({
   // Custom create method with proper authentication bypass
   async create(ctx) {
     try {
-      const { data } = ctx.request.body;
+      console.log('=== GAME CREATION REQUEST ===');
+      console.log('Request method:', ctx.request.method);
+      console.log('Request URL:', ctx.request.url);
+      console.log('Content-Type:', ctx.request.headers['content-type']);
+      console.log('Raw body keys:', Object.keys(ctx.request.body || {}));
+      
+      let gameData;
+      
+      // Handle different content types
+      if (ctx.request.body.data) {
+        // Either FormData with JSON data or regular JSON
+        if (typeof ctx.request.body.data === 'string') {
+          // FormData - parse JSON string
+          console.log('Parsing FormData JSON string');
+          gameData = JSON.parse(ctx.request.body.data);
+        } else {
+          // Regular JSON
+          console.log('Using regular JSON data');
+          gameData = ctx.request.body.data;
+        }
+      } else {
+        // Direct JSON body
+        console.log('Using direct JSON body');
+        gameData = ctx.request.body;
+      }
+      
+      console.log('Processed game data:', gameData);
+      
+      // Validate required fields
+      if (!gameData.name) {
+        console.log('ERROR: Game name is missing');
+        return ctx.badRequest('Game name is required');
+      }
+      
+      // Check if game already exists (same name AND type)
+      const existingGame = await strapi.entityService.findMany('api::game.game', {
+        filters: { 
+          name: gameData.name,
+          type: gameData.type
+        },
+        limit: 1,
+      });
+
+      if (existingGame?.length > 0) {
+        return ctx.badRequest(`A ${gameData.type} game with the name "${gameData.name}" already exists. Please choose a different name.`);
+      }
       
       // Create the game
+      console.log('Creating game in database...');
       const game = await strapi.entityService.create('api::game.game', {
         data: {
-          ...data,
+          ...gameData,
           isActive: true,
           totalQuestions: 0,
         },
       });
 
+      console.log('✅ Game created successfully with ID:', game.id);
+      console.log('=== END GAME CREATION ===');
       return { data: game };
     } catch (error) {
-      console.error('Game creation error:', error);
+      console.error('❌ Game creation error:', error);
+      console.error('Error stack:', error.stack);
       ctx.throw(500, 'Failed to create game');
     }
   },
@@ -48,15 +97,23 @@ module.exports = createCoreController('api::game.game', ({ strapi }) => ({
         return ctx.badRequest('Game name is required');
       }
 
-      // Check if game already exists
-      const existingGame = await strapi.entityService.findMany('api::game.game', {
-        filters: { name },
-        limit: 1,
+      // Check if nested game already exists
+      console.log('🔍 Checking for existing nested game with name:', name);
+      const allGamesWithName = await strapi.entityService.findMany('api::game.game', {
+        filters: { 
+          name
+        },
       });
+      console.log('🔍 Found all games with this name:', allGamesWithName);
+      
+      const existingNestedGames = allGamesWithName.filter(game => game.type === 'nested');
+      console.log('🔍 Found existing nested games:', existingNestedGames);
 
-      if (existingGame?.length > 0) {
-        return ctx.conflict('Game with this name already exists');
+      if (existingNestedGames?.length > 0) {
+        console.log('❌ Nested game already exists with this name');
+        return ctx.badRequest(`A nested game with the name "${name}" already exists. Please choose a different name.`);
       }
+      console.log('✅ No existing nested game found, proceeding with creation');
 
       // Create the nested game
       const game = await strapi.entityService.create('api::game.game', {
@@ -79,7 +136,6 @@ module.exports = createCoreController('api::game.game', ({ strapi }) => ({
           data: {
             name: categoryNames[i] || `Category ${i + 1}`,
             description: `Questions for ${categoryNames[i] || `Category ${i + 1}`}`,
-            difficulty: 'medium',
             questionCount: 0,
             status,
             game: game.id,
@@ -96,7 +152,6 @@ module.exports = createCoreController('api::game.game', ({ strapi }) => ({
         data: {
           name: 'Special Card 6',
           description: 'Special card without questions - game completion bonus',
-          difficulty: 'medium',
           questionCount: 0,
           status,
           game: game.id,
@@ -123,6 +178,12 @@ module.exports = createCoreController('api::game.game', ({ strapi }) => ({
       };
     } catch (error) {
       console.error('Nested game creation error:', error);
+      
+      // Handle specific validation errors
+      if (error.message?.includes('unique')) {
+        return ctx.badRequest('A nested game with this name already exists. Please choose a different name.');
+      }
+      
       ctx.throw(500, 'Failed to create nested game');
     }
   },
@@ -317,6 +378,134 @@ module.exports = createCoreController('api::game.game', ({ strapi }) => ({
       };
     } catch (error) {
       ctx.throw(500, 'Error submitting answer');
+    }
+  },
+
+  // Update game
+  async update(ctx) {
+    try {
+      const { id } = ctx.params;
+      console.log('=== GAME UPDATE REQUEST ===');
+      console.log('Game ID:', id);
+      console.log('Request method:', ctx.request.method);
+      console.log('Content-Type:', ctx.request.headers['content-type']);
+      
+      let gameData;
+      
+      // Handle different content types
+      if (ctx.request.body.data) {
+        // Either FormData with JSON data or regular JSON
+        if (typeof ctx.request.body.data === 'string') {
+          // FormData - parse JSON string
+          console.log('Parsing FormData JSON string for update');
+          gameData = JSON.parse(ctx.request.body.data);
+        } else {
+          // Regular JSON
+          console.log('Using regular JSON data for update');
+          gameData = ctx.request.body.data;
+        }
+      } else {
+        // Direct JSON body
+        console.log('Using direct JSON body for update');
+        gameData = ctx.request.body;
+      }
+      
+      console.log('Processed update data:', gameData);
+      
+      // Update the game
+      const updatedGame = await strapi.entityService.update('api::game.game', id, {
+        data: gameData,
+      });
+
+      console.log('✅ Game updated successfully with ID:', id);
+      console.log('=== END GAME UPDATE ===');
+      return { data: updatedGame };
+    } catch (error) {
+      console.error('❌ Game update error:', error);
+      console.error('Error stack:', error.stack);
+      ctx.throw(500, 'Failed to update game');
+    }
+  },
+
+  // Delete game
+  async delete(ctx) {
+    try {
+      const { id } = ctx.params;
+      console.log('=== GAME DELETE REQUEST ===');
+      console.log('Game ID:', id);
+      
+      // Check if game exists
+      const game = await strapi.entityService.findOne('api::game.game', id);
+      if (!game) {
+        console.log('❌ Game not found for deletion:', id);
+        return ctx.notFound('Game not found');
+      }
+      
+      // Delete the game
+      const deletedGame = await strapi.entityService.delete('api::game.game', id);
+
+      console.log('✅ Game deleted successfully with ID:', id);
+      console.log('=== END GAME DELETE ===');
+      return { data: deletedGame };
+    } catch (error) {
+      console.error('❌ Game delete error:', error);
+      console.error('Error stack:', error.stack);
+      ctx.throw(500, 'Failed to delete game');
+    }
+  },
+
+  // Update categories for a nested game
+  async updateCategories(ctx) {
+    try {
+      const { id } = ctx.params;
+      const { categoryNames } = ctx.request.body;
+      
+      console.log('=== GAME CATEGORIES UPDATE REQUEST ===');
+      console.log('Game ID:', id);
+      console.log('New category names:', categoryNames);
+      
+      // Verify this is a nested game
+      const game = await strapi.entityService.findOne('api::game.game', id, {
+        populate: { categories: true }
+      });
+      
+      if (!game) {
+        return ctx.notFound('Game not found');
+      }
+      
+      if (game.type !== 'nested') {
+        return ctx.badRequest('Category updates are only allowed for nested games');
+      }
+      
+      // Get existing categories (excluding Special Card 6)
+      const regularCategories = game.categories.filter(cat => cat.cardNumber <= 5);
+      
+      // Update each category name
+      const updatePromises = [];
+      for (let i = 0; i < Math.min(categoryNames.length, 5); i++) {
+        if (regularCategories[i]) {
+          updatePromises.push(
+            strapi.entityService.update('api::category.category', regularCategories[i].id, {
+              data: { name: categoryNames[i] }
+            })
+          );
+        }
+      }
+      
+      await Promise.all(updatePromises);
+      
+      console.log('✅ Categories updated successfully');
+      console.log('=== END CATEGORIES UPDATE ===');
+      
+      // Return updated game with categories
+      const updatedGame = await strapi.entityService.findOne('api::game.game', id, {
+        populate: { categories: true }
+      });
+      
+      return { data: updatedGame };
+    } catch (error) {
+      console.error('❌ Categories update error:', error);
+      ctx.throw(500, 'Failed to update categories');
     }
   },
 })); 

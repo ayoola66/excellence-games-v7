@@ -27,7 +27,7 @@ Elite Games is an interactive trivia platform offering two distinct game types:
 ### Technical Features
 - **Authentication**: JWT-based with single-device session enforcement
 - **Background Music**: Admin uploads (10MB) + premium user uploads (5MB)
-- **Database**: PostgreSQL (production) / SQLite (development)
+- **Database**: PostgreSQL (production) 
 - **Payment**: Stripe integration for premium subscriptions
 
 ## 🚀 Quick Start
@@ -80,9 +80,9 @@ Elite Games is an interactive trivia platform offering two distinct game types:
 - **Premium User**: `premium@example.com` / `password`
 
 ### Admin Accounts
-- **Super Admin**: `superadmin@targetedgames.com` / `SuperAdmin2024!`
-- **Dev Admin**: `devadmin@targetedgames.com` / `DevAdmin2024!`
-- **Content Admin**: `contentadmin@targetedgames.com` / `ContentAdmin2024!`
+- **Super Admin**: `superadmin@elitegames.com` / `SuperAdmin2024!`
+- **Dev Admin**: `devadmin@elitegames.com` / `DevAdmin2024!`
+- **Content Admin**: `contentadmin@elitegames.com` / `ContentAdmin2024!`
 
 Access admin portal at: http://localhost:3000/admin
 
@@ -122,7 +122,7 @@ Access admin portal at: http://localhost:3000/admin
 
 ### Backend (Strapi 4.25.0)
 - **CMS**: Headless CMS with custom controllers
-- **Database**: SQLite (dev) / PostgreSQL (prod)
+- **Database**: PostgreSQL (staging and production)
 - **Authentication**: JWT with custom admin system
 - **File Upload**: Local provider with size limits
 - **API**: RESTful with relationship population

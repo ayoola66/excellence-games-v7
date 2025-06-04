@@ -5,7 +5,6 @@
  */
 
 module.exports = {
-  type: 'content-api',
   routes: [
     {
       method: 'POST',
@@ -13,8 +12,6 @@ module.exports = {
       handler: 'game.createNested',
       config: {
         auth: false,
-        policies: [],
-        middlewares: [],
       },
     },
     {
@@ -23,8 +20,6 @@ module.exports = {
       handler: 'game.getCategoryQuestions',
       config: {
         auth: false,
-        policies: [],
-        middlewares: [],
       },
     },
     {
@@ -33,8 +28,14 @@ module.exports = {
       handler: 'game.submitAnswer',
       config: {
         auth: false,
-        policies: [],
-        middlewares: [],
+      },
+    },
+    {
+      method: 'PUT',
+      path: '/games/:id/categories',
+      handler: 'game.updateCategories',
+      config: {
+        auth: false,
       },
     },
   ],

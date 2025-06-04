@@ -64,36 +64,26 @@ export const strapiApi = {
     try {
       let response
       
-      // For nested games, use the specialized endpoint
-      if (gameData.type === 'nested') {
-        const nestedGameData = {
-          name: gameData.name,
-          description: gameData.description,
-          status: gameData.status,
-          categoryNames: gameData.categoryNames
-        }
-        
-        response = await apiClient.post('/api/games/create-nested', nestedGameData)
+      // Check if gameData is FormData (contains thumbnail)
+      if (gameData instanceof FormData) {
+        response = await apiClient.post('/api/games', gameData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        })
       } else {
-        // For straight games, use the standard approach
-        // If thumbnail is provided, use multipart form data
-        if (gameData.thumbnail) {
-          const formData = new FormData()
+        // For nested games, use the specialized endpoint
+        if (gameData.type === 'nested') {
+          const nestedGameData = {
+            name: gameData.name,
+            description: gameData.description,
+            status: gameData.status,
+            categoryNames: gameData.categories || gameData.categoryNames
+          }
           
-          // Append game data (excluding thumbnail)
-          const { thumbnail, ...gameDataWithoutThumbnail } = gameData
-          formData.append('data', JSON.stringify(gameDataWithoutThumbnail))
-          
-          // Append thumbnail file
-          formData.append('files.thumbnail', thumbnail)
-          
-          response = await apiClient.post('/api/games', formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          })
+          response = await apiClient.post('/api/games/create-nested', nestedGameData)
         } else {
-          // Standard JSON request without thumbnail
+          // Standard JSON request
           response = await apiClient.post('/api/games', {
             data: gameData
           })
@@ -108,8 +98,25 @@ export const strapiApi = {
   },
 
   async updateGame(id: string, gameData: any) {
-    const response = await apiClient.put(`/api/games/${id}`, {
-      data: gameData
+    // Check if gameData is FormData (contains thumbnail)
+    if (gameData instanceof FormData) {
+      const response = await apiClient.put(`/api/games/${id}`, gameData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+      return response.data
+    } else {
+      const response = await apiClient.put(`/api/games/${id}`, {
+        data: gameData
+      })
+      return response.data
+    }
+  },
+
+  async updateGameCategories(id: string, categoryNames: string[]) {
+    const response = await apiClient.put(`/api/games/${id}/categories`, {
+      categoryNames
     })
     return response.data
   },
@@ -174,24 +181,47 @@ export const strapiApi = {
     option4: string
     correctAnswer: 'option1' | 'option2' | 'option3' | 'option4'
     explanation?: string
-    difficulty?: 'easy' | 'medium' | 'hard'
     category: string
     game: string
   }) {
-    const response = await apiClient.post('/api/questions', {
-      data: {
-        ...questionData,
-        isActive: true,
-        timesAnswered: 0,
-        timesCorrect: 0,
-        sortOrder: 0
+    try {
+      console.log('🔄 Creating question with data:', questionData)
+      
+      const response = await apiClient.post('/api/questions', {
+        data: {
+          question: questionData.question,
+          option1: questionData.option1,
+          option2: questionData.option2,
+          option3: questionData.option3,
+          option4: questionData.option4,
+          correctAnswer: questionData.correctAnswer,
+          explanation: questionData.explanation || '',
+          game: questionData.game,
+          category: questionData.category || null,
+          isActive: true,
+          timesAnswered: 0,
+          timesCorrect: 0,
+          sortOrder: 0
+        }
+      })
+      
+      console.log('✅ Question created successfully:', response.data)
+      
+      // Update category question count only if category is provided
+      if (questionData.category) {
+        try {
+          await this.updateCategoryQuestionCount(questionData.category)
+        } catch (categoryError) {
+          console.warn('Failed to update category count:', categoryError)
+          // Don't fail the whole operation if category update fails
+        }
       }
-    })
-    
-    // Update category question count
-    await this.updateCategoryQuestionCount(questionData.category)
-    
-    return response.data
+      
+      return response.data
+    } catch (error) {
+      console.error('❌ Error creating question:', error)
+      throw error
+    }
   },
 
   async updateQuestion(id: string, questionData: any) {
@@ -379,35 +409,415 @@ export const strapiApi = {
   // ============= ANALYTICS =============
 
   async getDashboardStats() {
-    const [games, users, music] = await Promise.all([
-      this.getGames(),
-      this.getUsers(),
-      this.getMusicTracks()
-    ])
-
-    const gamesData = games.data || []
-    const usersData = users || []
-    const musicData = music.data || []
-
-    return {
-      games: {
-        total: gamesData.length,
-        free: gamesData.filter((g: any) => g.attributes.status === 'free').length,
-        premium: gamesData.filter((g: any) => g.attributes.status === 'premium').length,
-        totalQuestions: gamesData.reduce((total: number, game: any) => total + (game.attributes.totalQuestions || 0), 0)
-      },
-      users: {
-        total: usersData.length,
-        premium: usersData.filter((u: any) => u.subscriptionStatus === 'premium').length,
-        free: usersData.filter((u: any) => u.subscriptionStatus === 'free').length
-      },
-      music: {
-        total: musicData.length,
-        backgroundTracks: musicData.filter((m: any) => m.attributes.type === 'background').length,
-        userTracks: musicData.filter((m: any) => m.attributes.type === 'user').length,
-        activeTracks: musicData.filter((m: any) => m.attributes.isActive).length
+    try {
+      const response = await apiClient.get('/api/admin-data')
+      return response.data
+    } catch (error) {
+      console.error('Error fetching admin stats:', error)
+      // Return default stats if API fails
+      return {
+        totalGames: 0,
+        totalQuestions: 0,
+        totalUsers: 0,
+        premiumUsers: 0,
+        activeUsers: 0
       }
     }
+  },
+
+  // ============= USER PROFILE OPERATIONS =============
+
+  async getUserProfile() {
+    const response = await apiClient.get('/api/users/me?populate=userMusic')
+    return response.data
+  },
+
+  async updateUserProfile(profileData: {
+    fullName?: string
+    phone?: string
+    address?: string
+  }) {
+    const response = await apiClient.put('/api/users/me', profileData)
+    return response.data
+  },
+
+  async uploadUserMusic(formData: FormData) {
+    const response = await apiClient.post('/api/user-musics', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+    return response.data
+  },
+
+  async deleteUserMusic(id: string) {
+    const response = await apiClient.delete(`/api/user-musics/${id}`)
+    return response.data
+  },
+
+  // ============= ENHANCED QUESTION OPERATIONS =============
+
+  async getQuestions(filters?: {
+    gameId?: string
+    categoryId?: string
+    search?: string
+  }) {
+    let url = '/api/questions?populate=category,game'
+    
+    if (filters) {
+      const params = new URLSearchParams()
+      
+      if (filters.gameId) {
+        params.append('filters[game][id][$eq]', filters.gameId)
+      }
+      
+      if (filters.categoryId) {
+        params.append('filters[category][id][$eq]', filters.categoryId)
+      }
+      
+      if (filters.search) {
+        params.append('filters[$or][0][question][$containsi]', filters.search)
+        params.append('filters[$or][1][option1][$containsi]', filters.search)
+        params.append('filters[$or][2][option2][$containsi]', filters.search)
+        params.append('filters[$or][3][option3][$containsi]', filters.search)
+        params.append('filters[$or][4][option4][$containsi]', filters.search)
+      }
+      
+      if (params.toString()) {
+        url += '&' + params.toString()
+      }
+    }
+    
+    try {
+      const response = await apiClient.get(url)
+      return response.data
+    } catch (error) {
+      console.error('Error fetching questions:', error)
+      return { data: [] }
+    }
+  },
+
+  async bulkImportQuestions(gameId: string, questionsData: any[]) {
+    const response = await apiClient.post('/api/questions/bulk-import', {
+      gameId,
+      questions: questionsData
+    })
+    return response.data
+  },
+
+  // ============= MUSIC MANAGEMENT =============
+
+  async getBackgroundMusic() {
+    try {
+      const response = await apiClient.get('/api/background-musics?populate=audioFile')
+      return response.data
+    } catch (error) {
+      console.error('Error fetching background music:', error)
+      return { data: [] }
+    }
+  },
+
+  async uploadBackgroundMusic(formData: FormData) {
+    const response = await apiClient.post('/api/background-musics', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+    return response.data
+  },
+
+  async toggleMusicActive(id: string, isActive: boolean) {
+    const response = await apiClient.put(`/api/background-musics/${id}`, {
+      data: { isActive }
+    })
+    return response.data
+  },
+
+  async deleteBackgroundMusic(id: string) {
+    const response = await apiClient.delete(`/api/background-musics/${id}`)
+    return response.data
+  },
+
+  // ============= USER MANAGEMENT (ADMIN) =============
+
+  async getUsersList(filters?: {
+    subscriptionStatus?: 'free' | 'premium'
+    search?: string
+  }) {
+    let url = '/api/users?populate=userMusic'
+    
+    if (filters) {
+      const params = new URLSearchParams()
+      
+      if (filters.subscriptionStatus) {
+        params.append('filters[subscriptionStatus][$eq]', filters.subscriptionStatus)
+      }
+      
+      if (filters.search) {
+        params.append('filters[$or][0][email][$containsi]', filters.search)
+        params.append('filters[$or][1][fullName][$containsi]', filters.search)
+      }
+      
+      if (params.toString()) {
+        url += '&' + params.toString()
+      }
+    }
+    
+    try {
+      const response = await apiClient.get(url)
+      return response.data
+    } catch (error) {
+      console.error('Error fetching users:', error)
+      return { data: [] }
+    }
+  },
+
+  async updateUserSubscription(userId: string, subscriptionData: {
+    subscriptionStatus: 'free' | 'premium'
+    premiumExpiry?: string
+  }) {
+    const response = await apiClient.put(`/api/users/${userId}`, subscriptionData)
+    return response.data
+  },
+
+  // ============= ANALYTICS =============
+
+  async getGameAnalytics() {
+    try {
+      const response = await apiClient.get('/api/analytics/games')
+      return response.data
+    } catch (error) {
+      console.error('Error fetching game analytics:', error)
+      return { data: [] }
+    }
+  },
+
+  async getUserAnalytics() {
+    try {
+      const response = await apiClient.get('/api/analytics/users')
+      return response.data
+    } catch (error) {
+      console.error('Error fetching user analytics:', error)
+      return { data: [] }
+    }
+  },
+
+  async getQuestionAnalytics() {
+    try {
+      const response = await apiClient.get('/api/analytics/questions')
+      return response.data
+    } catch (error) {
+      console.error('Error fetching question analytics:', error)
+      return { data: [] }
+    }
+  },
+
+  // ============= SHOP OPERATIONS =============
+
+  async getProducts(filters?: {
+    type?: string
+    category?: string
+    featured?: boolean
+    inStock?: boolean
+    priceMin?: number
+    priceMax?: number
+    search?: string
+    sort?: string
+  }) {
+    try {
+      let url = '/api/products?populate=images'
+      
+      if (filters) {
+        const params = new URLSearchParams()
+        
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== '') {
+            params.append(key, value.toString())
+          }
+        })
+        
+        if (params.toString()) {
+          url += '&' + params.toString()
+        }
+      }
+      
+      const response = await apiClient.get(url)
+      return response.data
+    } catch (error) {
+      console.error('Error fetching products:', error)
+      return { data: [] }
+    }
+  },
+
+  async getProduct(id: string) {
+    const response = await apiClient.get(`/api/products/${id}?populate=images`)
+    return response.data
+  },
+
+  async getFeaturedProducts() {
+    try {
+      const response = await apiClient.get('/api/products/featured')
+      return response.data
+    } catch (error) {
+      console.error('Error fetching featured products:', error)
+      return { data: [] }
+    }
+  },
+
+  async getProductCategories() {
+    try {
+      const response = await apiClient.get('/api/products/categories')
+      return response.data
+    } catch (error) {
+      console.error('Error fetching product categories:', error)
+      return { data: [] }
+    }
+  },
+
+  async createProduct(productData: any) {
+    try {
+      let response
+      
+      if (productData instanceof FormData) {
+        response = await apiClient.post('/api/products', productData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        })
+      } else {
+        response = await apiClient.post('/api/products', {
+          data: productData
+        })
+      }
+      
+      return response.data
+    } catch (error: any) {
+      console.error('Error creating product:', error)
+      throw error
+    }
+  },
+
+  async updateProduct(id: string, productData: any) {
+    try {
+      let response
+      
+      if (productData instanceof FormData) {
+        response = await apiClient.put(`/api/products/${id}`, productData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        })
+      } else {
+        response = await apiClient.put(`/api/products/${id}`, {
+          data: productData
+        })
+      }
+      
+      return response.data
+    } catch (error: any) {
+      console.error('Error updating product:', error)
+      throw error
+    }
+  },
+
+  async deleteProduct(id: string) {
+    const response = await apiClient.delete(`/api/products/${id}`)
+    return response.data
+  },
+
+  async calculatePricing(items: Array<{ productId: string; quantity: number }>) {
+    const response = await apiClient.post('/api/products/calculate-pricing', {
+      items
+    })
+    return response.data
+  },
+
+  // ============= ORDER OPERATIONS =============
+
+  async createOrder(orderData: {
+    items: Array<{ productId: string; quantity: number }>
+    shippingAddress: any
+    billingAddress: any
+    paymentMethodId: string
+  }) {
+    const response = await apiClient.post('/api/orders', orderData)
+    return response.data
+  },
+
+  async getOrders(filters?: {
+    status?: string
+    paymentStatus?: string
+    search?: string
+  }) {
+    try {
+      let url = '/api/orders?populate=user,products.images'
+      
+      if (filters) {
+        const params = new URLSearchParams()
+        
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== '') {
+            params.append(key, value.toString())
+          }
+        })
+        
+        if (params.toString()) {
+          url += '&' + params.toString()
+        }
+      }
+      
+      const response = await apiClient.get(url)
+      return response.data
+    } catch (error) {
+      console.error('Error fetching orders:', error)
+      return { data: [] }
+    }
+  },
+
+  async getUserOrders() {
+    try {
+      const response = await apiClient.get('/api/orders/my-orders')
+      return response.data
+    } catch (error) {
+      console.error('Error fetching user orders:', error)
+      return { data: [] }
+    }
+  },
+
+  async updateOrderStatus(id: string, status: string, trackingNumber?: string) {
+    const response = await apiClient.put(`/api/orders/${id}/status`, {
+      status,
+      trackingNumber
+    })
+    return response.data
+  },
+
+  // ============= SHOP SETTINGS =============
+
+  async getShopSettings() {
+    try {
+      const response = await apiClient.get('/api/shop-setting')
+      return response.data
+    } catch (error) {
+      console.error('Error fetching shop settings:', error)
+      return { 
+        data: {
+          firstBoardGamePrice: 40.00,
+          additionalBoardGamePrice: 25.00,
+          currency: 'GBP',
+          freeShippingThreshold: 50.00,
+          standardShippingCost: 5.99,
+          taxRate: 0.20
+        } 
+      }
+    }
+  },
+
+  async updateShopSettings(settingsData: any) {
+    const response = await apiClient.put('/api/shop-setting', {
+      data: settingsData
+    })
+    return response.data
   }
 }
 

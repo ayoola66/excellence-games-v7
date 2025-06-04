@@ -6,7 +6,7 @@
 
 const { createCoreRouter } = require('@strapi/strapi').factories;
 
-module.exports = createCoreRouter('api::game.game', {
+const defaultRouter = createCoreRouter('api::game.game', {
   config: {
     find: {
       auth: false,
@@ -26,4 +26,7 @@ module.exports = createCoreRouter('api::game.game', {
       auth: false,
     },
   },
-}); 
+});
+
+// Export the default router - custom routes will be in a separate file
+module.exports = defaultRouter; 

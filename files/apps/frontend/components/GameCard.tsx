@@ -47,8 +47,13 @@ export default function GameCard({ game }: GameCardProps) {
   const { user } = useAuth()
   const router = useRouter()
 
+  // Defensive programming: handle missing attributes
+  if (!game || !game.attributes) {
+    return null
+  }
+
   const canPlayGame = () => {
-    if (game.attributes.status === 'free') return true
+    if (game.attributes?.status === 'free') return true
     return user?.subscriptionStatus === 'premium'
   }
 
@@ -67,7 +72,10 @@ export default function GameCard({ game }: GameCardProps) {
   }
 
   const getGameTypeInfo = () => {
-    switch (game.attributes.type) {
+    // Provide default value if type is undefined
+    const gameType = game.attributes?.type || 'straight'
+    
+    switch (gameType) {
       case 'straight':
         return {
           label: 'Straight Trivia',
@@ -100,6 +108,15 @@ export default function GameCard({ game }: GameCardProps) {
 
   const typeInfo = getGameTypeInfo()
 
+  // Extract attributes with default values
+  const {
+    name = 'Untitled Game',
+    description = 'No description available',
+    status = 'free',
+    totalQuestions = 0,
+    type = 'straight'
+  } = game.attributes
+
   return (
     <motion.div 
       className="game-card group cursor-pointer"
@@ -124,7 +141,7 @@ export default function GameCard({ game }: GameCardProps) {
 
         {/* Game Status Badge */}
         <div className="absolute top-4 right-4">
-          {game.attributes.status === 'premium' ? (
+          {status === 'premium' ? (
             <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center gap-1">
               <StarIconSolid className="h-3 w-3" />
               Premium
@@ -151,7 +168,7 @@ export default function GameCard({ game }: GameCardProps) {
         <div className="absolute bottom-4 left-4">
           <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-white text-xs font-semibold flex items-center gap-1">
             <QuestionMarkCircleIcon className="h-3 w-3" />
-            {game.attributes.totalQuestions} Questions
+            {totalQuestions} Questions
           </div>
         </div>
       </div>
@@ -165,7 +182,7 @@ export default function GameCard({ game }: GameCardProps) {
             {typeInfo.label}
           </span>
           
-          {game.attributes.type === 'nested' && (
+          {type === 'nested' && (
             <div className="flex items-center gap-1 text-xs text-purple-600 font-medium">
               <FolderIcon className="h-3 w-3" />
               5 Categories + Special
@@ -175,17 +192,17 @@ export default function GameCard({ game }: GameCardProps) {
 
         {/* Game Title */}
         <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-200">
-          {game.attributes.name}
+          {name}
         </h3>
 
         {/* Game Description */}
         <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-2">
-          {game.attributes.description}
+          {description}
         </p>
 
         {/* Game Features */}
         <div className="flex flex-wrap gap-2 mb-6">
-          {game.attributes.type === 'straight' && (
+          {type === 'straight' && (
             <>
               <span className="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-md font-medium">
                 <BoltIcon className="h-3 w-3" />
@@ -198,7 +215,7 @@ export default function GameCard({ game }: GameCardProps) {
             </>
           )}
           
-          {game.attributes.type === 'nested' && (
+          {type === 'nested' && (
             <>
               <span className="inline-flex items-center gap-1 text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-md font-medium">
                 <SparklesIcon className="h-3 w-3" />

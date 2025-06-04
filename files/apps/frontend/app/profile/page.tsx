@@ -221,7 +221,7 @@ export default function ProfilePage() {
                   <div className="bg-white rounded-2xl shadow-lg p-6 text-center border-l-8 border-yellow-400">
                     <StarIcon className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
                     <div className="text-3xl font-bold text-blue-900 mb-2">
-                      {user.totalScore || 0}
+                      {(user as any).totalScore || 0}
                     </div>
                     <p className="text-blue-600 font-medium">Total Score</p>
                   </div>
@@ -229,7 +229,7 @@ export default function ProfilePage() {
                   <div className="bg-white rounded-2xl shadow-lg p-6 text-center border-l-8 border-indigo-400">
                     <MusicalNoteIcon className="h-12 w-12 text-indigo-500 mx-auto mb-4" />
                     <div className="text-3xl font-bold text-blue-900 mb-2">
-                      {user.uploadedMusic?.length || 0}
+                      {(user as any).uploadedMusic?.length || 0}
                     </div>
                     <p className="text-blue-600 font-medium">Music Tracks</p>
                   </div>
@@ -239,8 +239,8 @@ export default function ProfilePage() {
                 <div className="bg-white rounded-2xl shadow-lg p-8">
                   <h3 className="text-xl font-bold text-blue-900 mb-6">Recent Activity</h3>
                   <div className="space-y-4">
-                    {user.gameProgress && Object.keys(user.gameProgress).length > 0 ? (
-                      Object.entries(user.gameProgress).slice(0, 3).map(([gameId, progress]: [string, any]) => (
+                    {(user as any).gameProgress && Object.keys((user as any).gameProgress).length > 0 ? (
+                      Object.entries((user as any).gameProgress).slice(0, 3).map(([gameId, progress]: [string, any]) => (
                         <div key={gameId} className="flex items-center justify-between p-4 bg-blue-50 rounded-xl">
                           <div className="flex items-center">
                             <PlayIcon className="h-8 w-8 text-blue-600 mr-3" />
@@ -399,9 +399,9 @@ export default function ProfilePage() {
                       {/* Uploaded Music List */}
                       <div>
                         <h3 className="text-lg font-semibold text-blue-900 mb-4">Your Music Library</h3>
-                        {user.uploadedMusic && user.uploadedMusic.length > 0 ? (
+                        {(user as any).uploadedMusic && (user as any).uploadedMusic.length > 0 ? (
                           <div className="space-y-3">
-                            {user.uploadedMusic.map((track: any, index: number) => (
+                            {(user as any).uploadedMusic.map((track: any, index: number) => (
                               <div key={index} className="bg-blue-50 rounded-xl p-4 flex items-center justify-between">
                                 <div className="flex items-center">
                                   <MusicalNoteIcon className="h-8 w-8 text-blue-600 mr-3" />

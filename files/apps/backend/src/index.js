@@ -5,8 +5,7 @@ module.exports = {
    * An asynchronous register function that runs before
    * your application is initialized.
    *
-   * This gives you an opportunity to set up your data model,
-   * run jobs, or perform some special logic.
+   * This gives you an opportunity to extend code.
    */
   register(/*{ strapi }*/) {},
 
@@ -18,14 +17,68 @@ module.exports = {
    * run jobs, or perform some special logic.
    */
   async bootstrap({ strapi }) {
-    // Demo data initialization has been disabled to prevent database issues
-    // If you need to re-enable demo data, uncomment the lines below:
-    // if (process.env.NODE_ENV === 'development') {
-    //   await initializeDemoData(strapi);
-    // }
-    console.log('🚀 Strapi bootstrap completed - Demo data initialization disabled');
+    console.log('🚀 Bootstrapping Elite Games Backend...');
+    
+    try {
+      // Set up permissions for question content type
+      await setupPermissions(strapi);
+      console.log('✅ Bootstrap completed successfully');
+    } catch (error) {
+      console.error('❌ Bootstrap error:', error);
+    }
   },
 };
+
+async function setupPermissions(strapi) {
+  // Set permissions for Public role (read-only)
+  const publicRole = await strapi.query('plugin::users-permissions.role').findOne({
+    where: { name: 'Public' }
+  });
+
+  if (publicRole) {
+    // Enable find and findOne for questions
+    const questionPermissions = await strapi.query('plugin::users-permissions.permission').findMany({
+      where: {
+        role: publicRole.id,
+        apiId: 'api::question.question'
+      }
+    });
+
+    for (const permission of questionPermissions) {
+      if (permission.action === 'find' || permission.action === 'findOne') {
+        await strapi.query('plugin::users-permissions.permission').update({
+          where: { id: permission.id },
+          data: { enabled: true }
+        });
+      }
+    }
+
+    console.log('✅ Question permissions set for Public role');
+  }
+
+  // Set permissions for Authenticated role (full access)
+  const authenticatedRole = await strapi.query('plugin::users-permissions.role').findOne({
+    where: { name: 'Authenticated' }
+  });
+
+  if (authenticatedRole) {
+    const questionPermissions = await strapi.query('plugin::users-permissions.permission').findMany({
+      where: {
+        role: authenticatedRole.id,
+        apiId: 'api::question.question'
+      }
+    });
+
+    for (const permission of questionPermissions) {
+      await strapi.query('plugin::users-permissions.permission').update({
+        where: { id: permission.id },
+        data: { enabled: true }
+      });
+    }
+
+    console.log('✅ Question permissions set for Authenticated role');
+  }
+}
 
 // Demo data function commented out to prevent automatic seeding
 /*

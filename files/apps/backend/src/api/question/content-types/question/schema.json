@@ -41,11 +41,6 @@
       "type": "text",
       "description": "Optional explanation for the correct answer"
     },
-    "difficulty": {
-      "type": "enumeration",
-      "enum": ["easy", "medium", "hard"],
-      "default": "medium"
-    },
     "tags": {
       "type": "json",
       "description": "Array of tags for organization"
