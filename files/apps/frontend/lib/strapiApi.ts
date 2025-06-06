@@ -47,9 +47,16 @@ export const strapiApi = {
   async getGames() {
     try {
       const response = await apiClient.get('/api/games?populate=thumbnail,categories')
+      if (!response?.data) {
+        console.warn('No games data received from API')
+        return { data: [] }
+      }
       return response.data
     } catch (error: any) {
-      console.error('Error fetching games:', error)
+      // Only log error in development
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Error fetching games:', error?.response?.data || error?.message)
+      }
       // Return empty structure if games can't be fetched
       return { data: [] }
     }
@@ -72,17 +79,17 @@ export const strapiApi = {
           },
         })
       } else {
-        // For nested games, use the specialized endpoint
-        if (gameData.type === 'nested') {
-          const nestedGameData = {
-            name: gameData.name,
-            description: gameData.description,
-            status: gameData.status,
+      // For nested games, use the specialized endpoint
+      if (gameData.type === 'nested') {
+        const nestedGameData = {
+          name: gameData.name,
+          description: gameData.description,
+          status: gameData.status,
             categoryNames: gameData.categories || gameData.categoryNames
-          }
-          
-          response = await apiClient.post('/api/games/create-nested', nestedGameData)
-        } else {
+        }
+        
+        response = await apiClient.post('/api/games/create-nested', nestedGameData)
+      } else {
           // Standard JSON request
           response = await apiClient.post('/api/games', {
             data: gameData
@@ -107,8 +114,8 @@ export const strapiApi = {
       })
       return response.data
     } else {
-      const response = await apiClient.put(`/api/games/${id}`, {
-        data: gameData
+    const response = await apiClient.put(`/api/games/${id}`, {
+      data: gameData
       })
       return response.data
     }
@@ -187,8 +194,8 @@ export const strapiApi = {
     try {
       console.log('🔄 Creating question with data:', questionData)
       
-      const response = await apiClient.post('/api/questions', {
-        data: {
+    const response = await apiClient.post('/api/questions', {
+      data: {
           question: questionData.question,
           option1: questionData.option1,
           option2: questionData.option2,
@@ -198,26 +205,26 @@ export const strapiApi = {
           explanation: questionData.explanation || '',
           game: questionData.game,
           category: questionData.category || null,
-          isActive: true,
-          timesAnswered: 0,
-          timesCorrect: 0,
-          sortOrder: 0
-        }
-      })
-      
+        isActive: true,
+        timesAnswered: 0,
+        timesCorrect: 0,
+        sortOrder: 0
+      }
+    })
+    
       console.log('✅ Question created successfully:', response.data)
       
       // Update category question count only if category is provided
       if (questionData.category) {
         try {
-          await this.updateCategoryQuestionCount(questionData.category)
+    await this.updateCategoryQuestionCount(questionData.category)
         } catch (categoryError) {
           console.warn('Failed to update category count:', categoryError)
           // Don't fail the whole operation if category update fails
         }
       }
-      
-      return response.data
+    
+    return response.data
     } catch (error) {
       console.error('❌ Error creating question:', error)
       throw error
@@ -391,7 +398,7 @@ export const strapiApi = {
   async importQuestionsCSV(gameId: string, categoryId: string, csvFile: File) {
     const formData = new FormData()
     formData.append('gameId', gameId)
-    formData.append('categoryId', categoryId)
+    if (categoryId) formData.append('categoryId', categoryId)
     formData.append('csvFile', csvFile)
 
     const response = await apiClient.post('/api/questions/import-csv', formData, {
@@ -399,10 +406,19 @@ export const strapiApi = {
         'Content-Type': 'multipart/form-data',
       },
     })
+    return response.data
+  },
+
+  async importQuestionsXLSX(gameId: string, xlsxFile: File) {
+    const formData = new FormData()
+    formData.append('gameId', gameId)
+    formData.append('xlsxFile', xlsxFile, xlsxFile.name)
     
-    // Update category question count after import
-    await this.updateCategoryQuestionCount(categoryId)
-    
+    const response = await apiClient.post('/api/questions/import-xlsx', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
     return response.data
   },
 
@@ -415,7 +431,7 @@ export const strapiApi = {
     } catch (error) {
       console.error('Error fetching admin stats:', error)
       // Return default stats if API fails
-      return {
+    return {
         totalGames: 0,
         totalQuestions: 0,
         totalUsers: 0,
@@ -818,6 +834,16 @@ export const strapiApi = {
       data: settingsData
     })
     return response.data
+  },
+
+  async getQuestionsByUrl(url: string) {
+    try {
+      const response = await apiClient.get(url);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching questions:', error);
+      return { data: [] };
+    }
   }
 }
 

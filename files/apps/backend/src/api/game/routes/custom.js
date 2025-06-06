@@ -19,7 +19,7 @@ module.exports = {
       path: '/games/:gameId/categories/:categoryId/questions',
       handler: 'game.getCategoryQuestions',
       config: {
-        auth: false,
+        policies: ['global::is-authenticated'],
       },
     },
     {
@@ -27,7 +27,7 @@ module.exports = {
       path: '/games/submit-answer',
       handler: 'game.submitAnswer',
       config: {
-        auth: false,
+        policies: ['global::is-authenticated'],
       },
     },
     {

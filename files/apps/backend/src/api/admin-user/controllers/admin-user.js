@@ -86,83 +86,125 @@ module.exports = createCoreController('api::admin-user.admin-user', ({ strapi })
   // Create initial admin users
   async seedAdmins(ctx) {
     try {
-      const defaultAdmins = [
+      console.log('🌱 Seeding admin accounts...')
+      
+      const admins = [
         {
           email: 'superadmin@elitegames.com',
           password: 'SuperAdmin2024!',
           fullName: 'Super Administrator',
           adminType: 'SA',
           badge: 'SA',
+          role: 'super_admin',
+          permissions: ['all'],
+          isActive: true
         },
         {
-          email: 'devadmin@elitegames.com',
+          email: 'devadmin@elitegames.com', 
           password: 'DevAdmin2024!',
           fullName: 'Development Administrator',
           adminType: 'DEV',
           badge: 'DEV',
+          role: 'dev_admin',
+          permissions: ['games', 'questions', 'analytics'],
+          isActive: true
+        },
+        {
+          email: 'contentadmin@elitegames.com',
+          password: 'ContentAdmin2024!', 
+          fullName: 'Content Administrator',
+          adminType: 'CT',
+          badge: 'CT',
+          role: 'content_admin',
+          permissions: ['games', 'questions', 'music'],
+          isActive: true
         },
         {
           email: 'shopadmin@elitegames.com',
           password: 'ShopAdmin2024!',
-          fullName: 'Shop Administrator',
+          fullName: 'Shop Administrator', 
           adminType: 'SH',
           badge: 'SH',
-        },
-        {
-          email: 'contentadmin@elitegames.com',
-          password: 'ContentAdmin2024!',
-          fullName: 'Content Administrator',
-          adminType: 'CT',
-          badge: 'CT',
+          role: 'shop_admin',
+          permissions: ['shop', 'users', 'orders'],
+          isActive: true
         },
         {
           email: 'customeradmin@elitegames.com',
           password: 'CustomerAdmin2024!',
-          fullName: 'Customer Administrator',
+          fullName: 'Customer Service Administrator',
           adminType: 'CS',
           badge: 'CS',
-        },
-      ];
+          role: 'customer_admin', 
+          permissions: ['users', 'analytics'],
+          isActive: true
+        }
+      ]
 
-      const createdAdmins = [];
-
-      for (const adminData of defaultAdmins) {
-        // Check if admin already exists
-        const existing = await strapi.entityService.findMany('api::admin-user.admin-user', {
-          filters: { email: adminData.email },
-        });
-
-        if (!existing || existing.length === 0) {
-          // Hash password
-          const hashedPassword = await bcrypt.hash(adminData.password, 10);
+      const createdAdmins = []
+      
+      for (const adminData of admins) {
+        try {
+          // Check if admin already exists
+          const existingAdmin = await strapi.db.query('api::admin-user.admin-user').findOne({
+            where: { email: adminData.email }
+          })
           
-          // Create admin
-          const admin = await strapi.entityService.create('api::admin-user.admin-user', {
-            data: {
-              ...adminData,
-              password: hashedPassword,
-              permissions: getAdminPermissions(adminData.adminType),
-              isActive: true,
-            },
-          });
+          if (existingAdmin) {
+            // If existing admin password appears to be unhashed (length < 55)
+            if (existingAdmin.password && existingAdmin.password.length < 55) {
+              const hashed = await bcrypt.hash(adminData.password, 10)
+              await strapi.db.query('api::admin-user.admin-user').update({
+                where: { id: existingAdmin.id },
+                data: { password: hashed }
+              })
+              console.log(`🔒 Hashed password for ${adminData.email}`)
+              existingAdmin.password = hashed
+            }
+            // Ensure adminType/badge fields
+            if (!existingAdmin.adminType) {
+              await strapi.db.query('api::admin-user.admin-user').update({
+                where: { id: existingAdmin.id },
+                data: { adminType: adminData.adminType, badge: adminData.badge }
+              })
+            }
+            console.log(`✓ Admin ${adminData.email} already exists`)
+            createdAdmins.push(existingAdmin)
+            continue
+          }
+          
+          // Hash password
+          const hashedPassword = await bcrypt.hash(adminData.password, 10)
 
-          createdAdmins.push({
-            email: admin.email,
-            adminType: admin.adminType,
-            fullName: admin.fullName,
-          });
+          // Create the admin with hashed password
+          const admin = await strapi.db.query('api::admin-user.admin-user').create({
+            data: { ...adminData, password: hashedPassword }
+          })
+          
+          console.log(`✓ Created admin: ${adminData.email}`)
+          createdAdmins.push(admin)
+          
+        } catch (error) {
+          console.error(`❌ Error creating admin ${adminData.email}:`, error.message)
         }
       }
-
-      return {
-        data: {
-          message: `Created ${createdAdmins.length} admin users`,
-          admins: createdAdmins,
-        },
-      };
+      
+      console.log(`🎉 Admins created: ${createdAdmins.length}/${admins.length}`)
+      
+      ctx.body = {
+        success: true,
+        message: `Admin accounts created successfully!`,
+        admins: createdAdmins.map(admin => ({
+          id: admin.id,
+          email: admin.email,
+          fullName: admin.fullName,
+          role: admin.role
+        }))
+      }
+      
     } catch (error) {
-      console.error('Seed admin error:', error);
-      ctx.throw(500, 'Failed to seed admin users');
+      console.error('❌ Error seeding admins:', error)
+      ctx.throw(500, 'Failed to seed admin accounts')
     }
   },
 
@@ -286,6 +328,133 @@ module.exports = createCoreController('api::admin-user.admin-user', ({ strapi })
       ctx.throw(500, 'Failed to fetch dashboard data');
     }
   },
+
+  // Seed demo users for testing
+  async seedDemoUsers(ctx) {
+    try {
+      console.log('🌱 Seeding demo users...')
+      
+      const demoUsers = [
+        {
+          username: 'demouser1',
+          email: 'demo1@elitegames.com', 
+          password: 'DemoUser1!',
+          fullName: 'John Smith',
+          phone: '+44 7700 900001',
+          address: '123 High Street, London, UK',
+          subscriptionStatus: 'free',
+          confirmed: true,
+          blocked: false
+        },
+        {
+          username: 'demouser2',
+          email: 'demo2@elitegames.com',
+          password: 'DemoUser2!', 
+          fullName: 'Sarah Johnson',
+          phone: '+44 7700 900002',
+          address: '456 Queen Street, Manchester, UK',
+          subscriptionStatus: 'premium',
+          confirmed: true,
+          blocked: false,
+          premiumExpiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          username: 'demouser3',
+          email: 'demo3@elitegames.com',
+          password: 'DemoUser3!',
+          fullName: 'David Brown',  
+          phone: '+44 7700 900003',
+          address: '789 King Street, Birmingham, UK',
+          subscriptionStatus: 'free',
+          confirmed: true,
+          blocked: false
+        },
+        {
+          username: 'demouser4',
+          email: 'demo4@elitegames.com',
+          password: 'DemoUser4!',
+          fullName: 'Emma Wilson',
+          phone: '+44 7700 900004', 
+          address: '321 Princess Avenue, Leeds, UK',
+          subscriptionStatus: 'premium',
+          confirmed: true,
+          blocked: false,
+          premiumExpiry: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          username: 'demouser5',
+          email: 'demo5@elitegames.com',
+          password: 'DemoUser5!',
+          fullName: 'Michael Davis',
+          phone: '+44 7700 900005',
+          address: '654 Victoria Road, Edinburgh, UK', 
+          subscriptionStatus: 'free',
+          confirmed: true,
+          blocked: false
+        }
+      ]
+
+      const createdUsers = []
+      
+      for (const userData of demoUsers) {
+        try {
+          // Check if user already exists
+          const existingUser = await strapi.db.query('plugin::users-permissions.user').findOne({
+            where: { email: userData.email }
+          })
+          
+          if (existingUser) {
+            console.log(`✓ User ${userData.email} already exists`)
+            createdUsers.push(existingUser)
+            continue
+          }
+          
+          // Get the default user role
+          const defaultRole = await strapi.db.query('plugin::users-permissions.role').findOne({
+            where: { type: 'authenticated' }
+          })
+          
+          if (!defaultRole) {
+            console.error('❌ Default user role not found')
+            continue
+          }
+          
+          // Create the user
+          const user = await strapi.db.query('plugin::users-permissions.user').create({
+            data: {
+              ...userData,
+              role: defaultRole.id,
+              provider: 'local'
+            }
+          })
+          
+          console.log(`✓ Created user: ${userData.email} (${userData.fullName})`)
+          createdUsers.push(user)
+          
+        } catch (error) {
+          console.error(`❌ Error creating user ${userData.email}:`, error.message)
+        }
+      }
+      
+      console.log(`🎉 Demo users created: ${createdUsers.length}/${demoUsers.length}`)
+      
+      ctx.body = {
+        success: true,
+        message: `Demo users created successfully!`,
+        users: createdUsers.map(user => ({
+          id: user.id,
+          email: user.email,
+          fullName: user.fullName,
+          subscriptionStatus: user.subscriptionStatus,
+          premiumExpiry: user.premiumExpiry
+        }))
+      }
+      
+    } catch (error) {
+      console.error('❌ Error seeding demo users:', error)
+      ctx.throw(500, 'Failed to seed demo users')
+    }
+  }
 }));
 
 // Helper function to define permissions based on admin type

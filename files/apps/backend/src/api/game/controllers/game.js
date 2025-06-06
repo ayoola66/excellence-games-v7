@@ -188,46 +188,50 @@ module.exports = createCoreController('api::game.game', ({ strapi }) => ({
     }
   },
 
-  // Get games with user access control
+  // Find games with populated relations and question counts
   async find(ctx) {
-    console.log('🎯 Custom game find method called');
     try {
-      const { user } = ctx.state;
-      const isAuthenticated = !!user;
-      const isPremium = user?.subscriptionStatus === 'premium';
+      console.log('🎯 Finding games with populated relations and question counts');
 
-      // Build query with proper population
-      const query = {
+      // Get games with populated relations
+      const games = await strapi.entityService.findMany('api::game.game', {
+        ...ctx.query,
         populate: {
           thumbnail: true,
           categories: true,
+          ...ctx.query.populate,
         },
-        sort: ['sortOrder:asc', 'createdAt:desc'],
-      };
-
-      console.log('🔍 Executing find query');
-      const games = await strapi.entityService.findMany('api::game.game', query);
-      console.log('📊 Found games:', games?.length || 0);
-
-      // Add additional game info safely
-      const gamesWithInfo = (games || []).map(game => {
-        const categories = game.categories || [];
-        const totalQuestions = categories.reduce((total, cat) => {
-          return total + (cat.questionCount || 0);
-        }, 0);
-
-        return {
-          ...game,
-          totalQuestions,
-          accessType: isPremium ? 'full' : game.status === 'free' ? 'free' : 'locked',
-        };
       });
 
-      console.log('✅ Returning games with info:', gamesWithInfo.length);
-      return { data: gamesWithInfo };
+      // Add question counts for each game
+      if (games && Array.isArray(games)) {
+        const gamesWithCounts = await Promise.all(
+          games.map(async (game) => {
+            try {
+              const questionCount = await strapi.db.query('api::question.question').count({
+                where: { game: game.id },
+              });
+              
+              return {
+                ...game,
+                totalQuestions: questionCount,
+              };
+            } catch (error) {
+              console.error(`Error getting question count for game ${game.id}:`, error);
+              // Return game without modifying question count if there's an error
+              return game;
+            }
+          })
+        );
+        
+        return { data: gamesWithCounts };
+      }
+      
+      // Return empty array if no games found
+      return { data: [] };
     } catch (error) {
-      console.error('❌ Error in game find method:', error);
-      ctx.throw(500, 'Failed to fetch games');
+      console.error('Error in game find method:', error);
+      return ctx.throw(500, 'Failed to fetch games');
     }
   },
 
@@ -237,29 +241,54 @@ module.exports = createCoreController('api::game.game', ({ strapi }) => ({
     const { user } = ctx.state;
     const isPremium = user?.subscriptionStatus === 'premium';
 
-    const game = await strapi.entityService.findOne('api::game.game', id, {
-      populate: {
-        thumbnail: true,
-        categories: {
-          populate: {
-            questions: {
-              populate: false, // Don't populate full question data initially
+    try {
+      // Get the game with its categories and questions
+      const game = await strapi.entityService.findOne('api::game.game', id, {
+        populate: {
+          thumbnail: true,
+          categories: {
+            populate: {
+              questions: {
+                populate: false,
+              },
             },
           },
         },
-      },
-    });
+      });
 
-    if (!game || !game.isActive) {
-      return ctx.notFound('Game not found');
+      if (!game) {
+        return ctx.notFound('Game not found');
+      }
+
+      // Check if user has access to the game
+      if (game.status === 'premium' && !isPremium) {
+        return ctx.forbidden('This game requires a premium subscription');
+      }
+
+      // Get or initialize user's game progress
+      let gameProgress = {};
+      if (user) {
+        const userData = await strapi.entityService.findOne('api::user.user', user.id, {});
+        gameProgress = userData.gameStats?.[game.id] || {
+          started: false,
+          completed: false,
+          currentCategory: null,
+          categoriesCompleted: {},
+          score: 0,
+          lastPlayed: null,
+        };
+      }
+
+      return {
+        data: {
+          ...game,
+          userProgress: gameProgress
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching game:', error);
+      return ctx.throw(500, 'Failed to fetch game');
     }
-
-    // Check user access
-    if (game.status === 'premium' && !isPremium) {
-      return ctx.forbidden('Premium subscription required');
-    }
-
-    return { data: game };
   },
 
   // Get questions for a specific category
@@ -315,69 +344,108 @@ module.exports = createCoreController('api::game.game', ({ strapi }) => ({
     }
   },
 
-  // Submit answer and get feedback
+  // Submit answer and track progress
   async submitAnswer(ctx) {
-    const { questionId, selectedAnswer } = ctx.request.body;
+    const { gameId, categoryId, questionId, answer } = ctx.request.body;
     const { user } = ctx.state;
 
+    if (!user) {
+      return ctx.unauthorized('You must be logged in to submit answers');
+    }
+
     try {
-      const question = await strapi.entityService.findOne('api::question.question', questionId);
+      // Get the question
+      const question = await strapi.entityService.findOne('api::question.question', questionId, {
+        populate: ['game', 'category'],
+      });
 
       if (!question) {
         return ctx.notFound('Question not found');
       }
 
-      const isCorrect = question.correctAnswer === selectedAnswer;
+      // Verify question belongs to the right game and category
+      if (question.game.id !== parseInt(gameId) || question.category.id !== parseInt(categoryId)) {
+        return ctx.badRequest('Invalid game or category ID');
+      }
 
-      // Update question statistics
+      // Check if answer is correct
+      const isCorrect = answer.toLowerCase() === question.correctAnswer.toLowerCase();
+
+      // Get current user data
+      const userData = await strapi.entityService.findOne('api::user.user', user.id, {});
+      
+      // Initialize or get game progress
+      const gameStats = userData.gameStats || {};
+      const gameProgress = gameStats[gameId] || {
+        started: true,
+        completed: false,
+        currentCategory: categoryId,
+        categoriesCompleted: {},
+        score: 0,
+        lastPlayed: new Date().toISOString(),
+      };
+
+      // Initialize category progress if not exists
+      if (!gameProgress.categoriesCompleted[categoryId]) {
+        gameProgress.categoriesCompleted[categoryId] = {
+          completed: false,
+          questionsAnswered: {},
+          score: 0,
+        };
+      }
+
+      // Update question progress
+      gameProgress.categoriesCompleted[categoryId].questionsAnswered[questionId] = {
+        answered: true,
+        correct: isCorrect,
+        timestamp: new Date().toISOString(),
+      };
+
+      // Update scores
       if (isCorrect) {
-        await strapi.entityService.update('api::question.question', questionId, {
-          data: {
-            timesCorrect: question.timesCorrect + 1,
-          },
-        });
+        gameProgress.score += 10;
+        gameProgress.categoriesCompleted[categoryId].score += 10;
       }
 
-      // Update user progress if authenticated
-      if (user) {
-        const currentProgress = user.gameProgress || {};
-        const gameId = question.game?.id;
-        const categoryId = question.category?.id;
+      // Check if category is completed
+      const categoryQuestions = await strapi.db.query('api::question.question').count({
+        where: { category: categoryId },
+      });
 
-        if (gameId && categoryId) {
-          if (!currentProgress[gameId]) {
-            currentProgress[gameId] = {};
-          }
-          if (!currentProgress[gameId][categoryId]) {
-            currentProgress[gameId][categoryId] = {
-              answeredQuestions: [],
-              correctAnswers: 0,
-              totalAnswers: 0,
-            };
-          }
+      const answeredQuestions = Object.keys(gameProgress.categoriesCompleted[categoryId].questionsAnswered).length;
+      gameProgress.categoriesCompleted[categoryId].completed = answeredQuestions >= categoryQuestions;
 
-          currentProgress[gameId][categoryId].answeredQuestions.push(questionId);
-          currentProgress[gameId][categoryId].totalAnswers++;
-          if (isCorrect) {
-            currentProgress[gameId][categoryId].correctAnswers++;
-          }
+      // Check if game is completed
+      const allCategories = await strapi.entityService.findMany('api::category.category', {
+        filters: { game: gameId },
+      });
 
-          await strapi.entityService.update('plugin::users-permissions.user', user.id, {
-            data: { gameProgress: currentProgress },
-          });
-        }
-      }
+      const completedCategories = Object.values(gameProgress.categoriesCompleted)
+        .filter(cat => cat.completed).length;
+
+      gameProgress.completed = completedCategories >= allCategories.length;
+
+      // Update user's game stats
+      gameStats[gameId] = gameProgress;
+      await strapi.entityService.update('api::user.user', user.id, {
+        data: {
+          gameStats: gameStats,
+          lastGamePlayed: new Date().toISOString(),
+          totalScore: (userData.totalScore || 0) + (isCorrect ? 10 : 0),
+          gamesCompleted: userData.gamesCompleted + (gameProgress.completed ? 1 : 0),
+        },
+      });
 
       return {
         data: {
           correct: isCorrect,
-          correctAnswer: question.correctAnswer,
-          explanation: question.explanation,
-          selectedAnswer,
+          progress: gameProgress,
+          message: isCorrect ? 'Correct answer!' : 'Incorrect answer. Try again!',
         },
       };
     } catch (error) {
-      ctx.throw(500, 'Error submitting answer');
+      console.error('Error submitting answer:', error);
+      return ctx.throw(500, 'Failed to submit answer');
     }
   },
 
@@ -454,6 +522,9 @@ module.exports = createCoreController('api::game.game', ({ strapi }) => ({
     }
   },
 
+  // ---
+  // updateCategories: expects { categoryNames: string[] } in body. Only updates first 5 categories (cards 1-5) for nested games. Special Card 6 is not renamed. Returns updated game with categories.
+  // ---
   // Update categories for a nested game
   async updateCategories(ctx) {
     try {

@@ -35,7 +35,16 @@ interface Game {
         }
       }
     }
-    categories?: any[]
+    categories?: {
+      data?: Array<{
+        id: string
+        attributes: {
+          name: string
+          questionCount: number
+          cardNumber?: number
+        }
+      }>
+    }
   }
 }
 
@@ -49,6 +58,7 @@ export default function GameCard({ game }: GameCardProps) {
 
   // Defensive programming: handle missing attributes
   if (!game || !game.attributes) {
+    console.warn('Invalid game data:', game)
     return null
   }
 

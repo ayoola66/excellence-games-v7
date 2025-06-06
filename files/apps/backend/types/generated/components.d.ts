@@ -1,16 +1,16 @@
-import type { Attribute, Schema } from '@strapi/strapi';
+import type { Schema, Attribute } from '@strapi/strapi';
 
 export interface UserProfile extends Schema.Component {
   collectionName: 'components_user_profiles';
   info: {
-    description: 'User profile details';
     displayName: 'Profile';
     icon: 'user';
+    description: 'User profile details';
   };
   attributes: {
-    avatar: Attribute.Media<'images'>;
     firstName: Attribute.String;
     lastName: Attribute.String;
+    avatar: Attribute.Media;
   };
 }
 

@@ -157,6 +157,7 @@ export default function AdminDashboard() {
   const [showQuestionForm, setShowQuestionForm] = useState(false)
   const [showImportModal, setShowImportModal] = useState(false)
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<any | null>(null)
 
   // Confirmation dialog state
   const [confirmDialog, setConfirmDialog] = useState({
@@ -219,18 +220,52 @@ export default function AdminDashboard() {
   })
   const [uploadingProduct, setUploadingProduct] = useState(false)
 
-  // Redirect if not admin
-  useEffect(() => {
-    if (!isLoading && !admin) {
-      router.push('/admin')
-    }
-  }, [admin, isLoading, router])
+  // Music state
+  const [musicTracks, setMusicTracks] = useState<any[]>([])
+  const [showMusicForm, setShowMusicForm] = useState(false)
+  const [musicForm, setMusicForm] = useState({
+    name: '',
+    type: 'background' as 'background' | 'user',
+    audioFile: null as File | null
+  })
+  const [uploadingMusic, setUploadingMusic] = useState(false)
 
+  // Users state
+  const [users, setUsers] = useState<any[]>([])
+  const [selectedUser, setSelectedUser] = useState<any>(null)
+  const [showUserForm, setShowUserForm] = useState(false)
+  const [userSearchTerm, setUserSearchTerm] = useState('')
+  const [userFilterType, setUserFilterType] = useState<'all' | 'free' | 'premium'>('all')
+
+  // Analytics state
+  const [analyticsData, setAnalyticsData] = useState<any>(null)
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false)
+
+  // Settings state
+  const [shopSettings, setShopSettings] = useState<any>(null)
+  const [showSettingsForm, setShowSettingsForm] = useState(false)
+  const [settingsForm, setSettingsForm] = useState({
+    siteName: '',
+    siteDescription: '',
+    currency: 'GBP',
+    shippingCost: 0,
+    taxRate: 0.20,
+    freeShippingThreshold: 50,
+    maintenanceMode: false,
+    allowRegistrations: true
+  })
+
+  // Modify useEffect to handle loading states
   useEffect(() => {
-    if (admin) {
+    if (!admin && !isLoading) {
+      router.push('/admin/login')
+      return
+    }
+
+    if (admin && !isLoading) {
       fetchData()
     }
-  }, [admin])
+  }, [admin, isLoading, activeTab])
 
   // Update stats when games or questions change
   useEffect(() => {
@@ -244,6 +279,22 @@ export default function AdminDashboard() {
     if (activeTab === 'shop' && products.length === 0 && orders.length === 0) {
       fetchProducts()
       fetchOrders()
+    }
+  }, [activeTab])
+
+  // Initialize data for other tabs when accessed
+  useEffect(() => {
+    if (activeTab === 'music' && musicTracks.length === 0) {
+      fetchMusicTracks()
+    }
+    if (activeTab === 'users' && users.length === 0) {
+      fetchUsers()
+    }
+    if (activeTab === 'analytics' && !analyticsData) {
+      fetchAnalytics()
+    }
+    if (activeTab === 'settings' && !shopSettings) {
+      fetchShopSettings()
     }
   }, [activeTab])
 
@@ -263,11 +314,17 @@ export default function AdminDashboard() {
     try {
       setRefreshingGames(true)
       const response = await strapiApi.getGames()
-      setGames(response.data || [])
-      console.log('🎮 Games fetched:', response.data?.length || 0)
+      if (Array.isArray(response?.data)) {
+        setGames(response.data)
+        console.log('🎮 Games fetched:', response.data?.length || 0)
+      } else {
+        setGames([])
+        console.log('🎮 No games available')
+      }
     } catch (error) {
-      console.error('Error fetching games:', error)
+      console.warn('Could not load games:', error)
       toast.error('Failed to load games')
+      setGames([])
     } finally {
       setRefreshingGames(false)
     }
@@ -275,11 +332,20 @@ export default function AdminDashboard() {
 
   const fetchQuestions = async () => {
     try {
-      const response = await strapiApi.getQuestions()
-      setQuestions(response.data || [])
+      let url = '/api/questions?populate=category,game';
+      if (selectedGame && selectedGame.id) {
+        url += `&filters[game][id][$eq]=${selectedGame.id}`;
+      }
+      // Only add category filter if a category is selected and not empty
+      if (selectedCategory && selectedCategory.id) {
+        url += `&filters[category][id][$eq]=${selectedCategory.id}`;
+      }
+      url += '&filters[isActive][$eq]=true';
+      const response = await strapiApi.getQuestionsByUrl(url);
+      setQuestions(response.data || []);
     } catch (error) {
-      console.error('Error fetching questions:', error)
-      toast.error('Failed to load questions')
+      console.error('Error fetching questions:', error);
+      toast.error('Failed to load questions');
     }
   }
 
@@ -333,7 +399,6 @@ export default function AdminDashboard() {
         description: gameForm.description,
         type: gameForm.type,
         status: gameForm.status
-        // Note: categories are managed separately, not through game updates
       }
       
       if (selectedGame) {
@@ -373,33 +438,39 @@ export default function AdminDashboard() {
         toast.success(`Game updated successfully! "${gameForm.name}" has been updated with the latest changes.`)
       } else {
         // Create new game
-        if (gameForm.type === 'nested') {
-          // Use the specialized nested endpoint
-          const nestedGameData = {
+        const createViaFormData = !!gameForm.thumbnail
+
+        if (gameForm.type === 'nested' && !createViaFormData) {
+          // Nested without thumbnail → JSON payload to specialised endpoint
+          await strapiApi.createGame({
             name: gameForm.name,
             description: gameForm.description,
+            type: 'nested',               // Ensure backend uses createNested
             status: gameForm.status,
             categoryNames: gameForm.categories
-          }
-          await strapiApi.createGame(nestedGameData)
+          })
         } else {
-          // Straight game
-          if (gameForm.thumbnail) {
-            // Has thumbnail - use FormData
+          // Straight OR nested with thumbnail – use FormData so thumbnail always uploads
+          if (createViaFormData) {
             const formData = new FormData()
-            formData.append('data', JSON.stringify(gameData))
-            formData.append('files.thumbnail', gameForm.thumbnail)
+            formData.append('data', JSON.stringify({
+              ...gameData,
+              categoryNames: gameForm.type === 'nested' ? gameForm.categories : undefined
+            }))
+            formData.append('files.thumbnail', gameForm.thumbnail as File)
             await strapiApi.createGame(formData)
           } else {
-            // No thumbnail - use regular JSON
+            // Straight without thumbnail JSON
             await strapiApi.createGame({ data: gameData })
           }
         }
         toast.success(`Game created successfully! "${gameForm.name}" is now available in the games library.`)
       }
       
+      // Close modal and ensure no lingering selectedGame
       setShowGameForm(false)
       setSelectedGame(null)
+      
       setGameForm({
         name: '',
         description: '',
@@ -702,6 +773,142 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error updating order status:', error)
       toast.error('Failed to update order status')
+    }
+  }
+
+  // Music functions
+  const fetchMusicTracks = async () => {
+    try {
+      const response = await strapiApi.getMusicTracks()
+      setMusicTracks(response.data || [])
+      console.log('🎵 Music tracks fetched:', response.data?.length || 0)
+    } catch (error) {
+      console.error('Error fetching music tracks:', error)
+      toast.error('Failed to load music tracks')
+    }
+  }
+
+  const handleMusicSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!musicForm.audioFile) {
+      toast.error('Please select an audio file')
+      return
+    }
+    
+    setUploadingMusic(true)
+    try {
+      const formData = new FormData()
+      formData.append('name', musicForm.name)
+      formData.append('type', musicForm.type)
+      formData.append('files.audioFile', musicForm.audioFile)
+      
+      await strapiApi.uploadMusicTrack({
+        name: musicForm.name,
+        type: musicForm.type,
+        audioFile: musicForm.audioFile
+      })
+      
+      toast.success(`Music track "${musicForm.name}" uploaded successfully!`)
+      setShowMusicForm(false)
+      setMusicForm({ name: '', type: 'background', audioFile: null })
+      fetchMusicTracks()
+    } catch (error) {
+      console.error('Error uploading music:', error)
+      toast.error('Failed to upload music track')
+    } finally {
+      setUploadingMusic(false)
+    }
+  }
+
+  const handleDeleteMusic = async (trackId: string) => {
+    try {
+      await strapiApi.deleteMusicTrack(trackId)
+      toast.success('Music track deleted successfully!')
+      fetchMusicTracks()
+    } catch (error) {
+      console.error('Error deleting music track:', error)
+      toast.error('Failed to delete music track')
+    }
+  }
+
+  // Users functions
+  const fetchUsers = async () => {
+    try {
+      const response = await strapiApi.getUsersList()
+      setUsers(response.data || [])
+      console.log('👥 Users fetched:', response.data?.length || 0)
+    } catch (error) {
+      console.error('Error fetching users:', error)
+      toast.error('Failed to load users')
+    }
+  }
+
+  const handleUpdateUserSubscription = async (userId: string, subscriptionStatus: 'free' | 'premium') => {
+    try {
+      const subscriptionData: any = { subscriptionStatus }
+      if (subscriptionStatus === 'premium') {
+        subscriptionData.premiumExpiry = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+      }
+      
+      await strapiApi.updateUserSubscription(userId, subscriptionData)
+      toast.success(`User subscription updated to ${subscriptionStatus}!`)
+      fetchUsers()
+      fetchStats() // Update stats to reflect premium user changes
+    } catch (error) {
+      console.error('Error updating user subscription:', error)
+      toast.error('Failed to update user subscription')
+    }
+  }
+
+  // Analytics functions
+  const fetchAnalytics = async () => {
+    setLoadingAnalytics(true)
+    try {
+      const [gameAnalytics, userAnalytics, questionAnalytics] = await Promise.all([
+        strapiApi.getGameAnalytics(),
+        strapiApi.getUserAnalytics(),
+        strapiApi.getQuestionAnalytics()
+      ])
+      
+      setAnalyticsData({
+        games: gameAnalytics.data,
+        users: userAnalytics.data,
+        questions: questionAnalytics.data
+      })
+      console.log('📊 Analytics data fetched')
+    } catch (error) {
+      console.error('Error fetching analytics:', error)
+      toast.error('Failed to load analytics data')
+    } finally {
+      setLoadingAnalytics(false)
+    }
+  }
+
+  // Settings functions
+  const fetchShopSettings = async () => {
+    try {
+      const response = await strapiApi.getShopSettings()
+      if (response.data) {
+        setShopSettings(response.data)
+        setSettingsForm(response.data)
+      }
+      console.log('⚙️ Shop settings fetched')
+    } catch (error) {
+      console.error('Error fetching shop settings:', error)
+      toast.error('Failed to load shop settings')
+    }
+  }
+
+  const handleSettingsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      await strapiApi.updateShopSettings(settingsForm)
+      toast.success('Shop settings updated successfully!')
+      setShowSettingsForm(false)
+      fetchShopSettings()
+    } catch (error) {
+      console.error('Error updating shop settings:', error)
+      toast.error('Failed to update shop settings')
     }
   }
 
@@ -1481,6 +1688,518 @@ export default function AdminDashboard() {
               </motion.div>
             )}
 
+            {activeTab === 'music' && (
+              <motion.div
+                key="music"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Music Management</h2>
+                    <p className="text-gray-600">Manage background music and user audio uploads</p>
+                  </div>
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={fetchMusicTracks}
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center"
+                    >
+                      <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Refresh
+                    </button>
+                    <button
+                      onClick={() => setShowMusicForm(true)}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center"
+                    >
+                      <PlusIcon className="h-5 w-5 mr-2" />
+                      Upload Music
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-6">Music Tracks</h3>
+                  
+                  <div className="space-y-4">
+                    {musicTracks.map((track) => (
+                      <div key={track.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium text-gray-900">{track.name}</h4>
+                            <p className="text-sm text-gray-600 capitalize">{track.type} music</p>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              track.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {track.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                            <button
+                              onClick={() => handleDeleteMusic(track.id)}
+                              className="text-red-600 hover:text-red-800"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {musicTracks.length === 0 && (
+                      <div className="text-center py-12">
+                        <MusicalNoteIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                        <p className="text-lg font-medium text-gray-900 mb-2">No music tracks yet</p>
+                        <p className="text-gray-600">Upload your first music track to get started</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'users' && (
+              <motion.div
+                key="users"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-2">User Management</h2>
+                    <p className="text-gray-600">Manage user accounts and subscriptions</p>
+                  </div>
+                  <button
+                    onClick={fetchUsers}
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center"
+                  >
+                    <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Refresh Users
+                  </button>
+                </div>
+
+                {/* User Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                  <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Total Users</p>
+                        <p className="text-3xl font-bold text-gray-900">{users.length}</p>
+                      </div>
+                      <UserGroupIcon className="h-8 w-8 text-blue-500" />
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Premium Users</p>
+                        <p className="text-3xl font-bold text-gray-900">
+                          {users.filter(user => user.subscriptionStatus === 'premium').length}
+                        </p>
+                      </div>
+                      <StarIcon className="h-8 w-8 text-yellow-500" />
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Free Users</p>
+                        <p className="text-3xl font-bold text-gray-900">
+                          {users.filter(user => user.subscriptionStatus === 'free').length}
+                        </p>
+                      </div>
+                      <CheckCircleIcon className="h-8 w-8 text-green-500" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* User List */}
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-bold text-gray-900">Users</h3>
+                    <div className="flex space-x-3">
+                      <input
+                        type="text"
+                        placeholder="Search users..."
+                        value={userSearchTerm}
+                        onChange={(e) => setUserSearchTerm(e.target.value)}
+                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      <select
+                        value={userFilterType}
+                        onChange={(e) => setUserFilterType(e.target.value as 'all' | 'free' | 'premium')}
+                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="all">All Users</option>
+                        <option value="free">Free Users</option>
+                        <option value="premium">Premium Users</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {users
+                      .filter(user => {
+                        const matchesSearch = userSearchTerm === '' || 
+                          user.fullName?.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+                          user.email?.toLowerCase().includes(userSearchTerm.toLowerCase())
+                        const matchesType = userFilterType === 'all' || user.subscriptionStatus === userFilterType
+                        return matchesSearch && matchesType
+                      })
+                      .map((user) => (
+                        <div key={user.id} className="border border-gray-200 rounded-lg p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                <span className="text-blue-600 font-bold">
+                                  {user.fullName?.charAt(0) || user.email?.charAt(0) || 'U'}
+                                </span>
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-gray-900">{user.fullName || 'No name'}</h4>
+                                <p className="text-sm text-gray-600">{user.email}</p>
+                                {user.phone && (
+                                  <p className="text-xs text-gray-500">{user.phone}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                user.subscriptionStatus === 'premium' 
+                                  ? 'bg-yellow-100 text-yellow-800' 
+                                  : 'bg-green-100 text-green-800'
+                              }`}>
+                                {user.subscriptionStatus === 'premium' ? 'Premium' : 'Free'}
+                              </span>
+                              {user.subscriptionStatus === 'free' && (
+                                <button
+                                  onClick={() => handleUpdateUserSubscription(user.id, 'premium')}
+                                  className="text-yellow-600 hover:text-yellow-800 text-xs bg-yellow-50 px-2 py-1 rounded"
+                                >
+                                  Upgrade to Premium
+                                </button>
+                              )}
+                              {user.subscriptionStatus === 'premium' && (
+                                <button
+                                  onClick={() => handleUpdateUserSubscription(user.id, 'free')}
+                                  className="text-gray-600 hover:text-gray-800 text-xs bg-gray-50 px-2 py-1 rounded"
+                                >
+                                  Downgrade to Free
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    
+                    {users.length === 0 && (
+                      <div className="text-center py-12">
+                        <UserGroupIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                        <p className="text-lg font-medium text-gray-900 mb-2">No users yet</p>
+                        <p className="text-gray-600">Users will appear here when they register</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'analytics' && (
+              <motion.div
+                key="analytics"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Analytics Dashboard</h2>
+                    <p className="text-gray-600">Game performance and user engagement insights</p>
+                  </div>
+                  <button
+                    onClick={fetchAnalytics}
+                    disabled={loadingAnalytics}
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center disabled:opacity-50"
+                  >
+                    {loadingAnalytics ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    ) : (
+                      <ChartBarIcon className="h-4 w-4 mr-2" />
+                    )}
+                    {loadingAnalytics ? 'Loading...' : 'Refresh Data'}
+                  </button>
+                </div>
+
+                {analyticsData ? (
+                  <div className="space-y-6">
+                    {/* Game Analytics */}
+                    <div className="bg-white rounded-xl shadow-lg p-6">
+                      <h3 className="text-xl font-bold text-gray-900 mb-4">Game Performance</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="bg-blue-50 p-4 rounded-lg">
+                          <p className="text-sm font-medium text-blue-600">Most Popular Game</p>
+                          <p className="text-lg font-bold text-blue-900">
+                            {analyticsData.games?.mostPopular?.name || 'No data'}
+                          </p>
+                        </div>
+                        <div className="bg-green-50 p-4 rounded-lg">
+                          <p className="text-sm font-medium text-green-600">Total Plays</p>
+                          <p className="text-lg font-bold text-green-900">
+                            {analyticsData.games?.totalPlays || 0}
+                          </p>
+                        </div>
+                        <div className="bg-purple-50 p-4 rounded-lg">
+                          <p className="text-sm font-medium text-purple-600">Average Score</p>
+                          <p className="text-lg font-bold text-purple-900">
+                            {analyticsData.games?.averageScore || 0}%
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* User Analytics */}
+                    <div className="bg-white rounded-xl shadow-lg p-6">
+                      <h3 className="text-xl font-bold text-gray-900 mb-4">User Engagement</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="bg-yellow-50 p-4 rounded-lg">
+                          <p className="text-sm font-medium text-yellow-600">Daily Active Users</p>
+                          <p className="text-lg font-bold text-yellow-900">
+                            {analyticsData.users?.dailyActive || 0}
+                          </p>
+                        </div>
+                        <div className="bg-pink-50 p-4 rounded-lg">
+                          <p className="text-sm font-medium text-pink-600">Weekly Active Users</p>
+                          <p className="text-lg font-bold text-pink-900">
+                            {analyticsData.users?.weeklyActive || 0}
+                          </p>
+                        </div>
+                        <div className="bg-indigo-50 p-4 rounded-lg">
+                          <p className="text-sm font-medium text-indigo-600">Monthly Active Users</p>
+                          <p className="text-lg font-bold text-indigo-900">
+                            {analyticsData.users?.monthlyActive || 0}
+                          </p>
+                        </div>
+                        <div className="bg-red-50 p-4 rounded-lg">
+                          <p className="text-sm font-medium text-red-600">Retention Rate</p>
+                          <p className="text-lg font-bold text-red-900">
+                            {analyticsData.users?.retentionRate || 0}%
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Question Analytics */}
+                    <div className="bg-white rounded-xl shadow-lg p-6">
+                      <h3 className="text-xl font-bold text-gray-900 mb-4">Question Performance</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-teal-50 p-4 rounded-lg">
+                          <p className="text-sm font-medium text-teal-600">Most Difficult Question</p>
+                          <p className="text-lg font-bold text-teal-900">
+                            {analyticsData.questions?.mostDifficult?.question?.substring(0, 50) || 'No data'}...
+                          </p>
+                          <p className="text-xs text-teal-700">
+                            {analyticsData.questions?.mostDifficult?.correctRate || 0}% correct rate
+                          </p>
+                        </div>
+                        <div className="bg-orange-50 p-4 rounded-lg">
+                          <p className="text-sm font-medium text-orange-600">Easiest Question</p>
+                          <p className="text-lg font-bold text-orange-900">
+                            {analyticsData.questions?.easiest?.question?.substring(0, 50) || 'No data'}...
+                          </p>
+                          <p className="text-xs text-orange-700">
+                            {analyticsData.questions?.easiest?.correctRate || 0}% correct rate
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-xl shadow-lg p-12 text-center">
+                    <ChartBarIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <p className="text-lg font-medium text-gray-900 mb-2">No analytics data available</p>
+                    <p className="text-gray-600 mb-4">Click "Refresh Data" to load analytics information</p>
+                    <button
+                      onClick={fetchAnalytics}
+                      className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                    >
+                      Load Analytics
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {activeTab === 'settings' && (
+              <motion.div
+                key="settings"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-2">System Settings</h2>
+                    <p className="text-gray-600">Configure shop and application settings</p>
+                  </div>
+                  <button
+                    onClick={fetchShopSettings}
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center"
+                  >
+                    <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Refresh Settings
+                  </button>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-6">Shop Configuration</h3>
+                  
+                  <form onSubmit={handleSettingsSubmit} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Site Name
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm.siteName}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, siteName: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Elite Games"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Currency
+                        </label>
+                        <select
+                          value={settingsForm.currency}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, currency: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option value="GBP">British Pound (£)</option>
+                          <option value="USD">US Dollar ($)</option>
+                          <option value="EUR">Euro (€)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Shipping Cost (£)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={settingsForm.shippingCost}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, shippingCost: parseFloat(e.target.value) || 0 })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="5.99"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Tax Rate (%)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={settingsForm.taxRate * 100}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, taxRate: (parseFloat(e.target.value) || 0) / 100 })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="20"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Free Shipping Threshold (£)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={settingsForm.freeShippingThreshold}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, freeShippingThreshold: parseFloat(e.target.value) || 0 })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="50"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Site Description
+                      </label>
+                      <textarea
+                        value={settingsForm.siteDescription}
+                        onChange={(e) => setSettingsForm({ ...settingsForm, siteDescription: e.target.value })}
+                        rows={3}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Your premium trivia gaming platform"
+                      />
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="maintenanceMode"
+                          checked={settingsForm.maintenanceMode}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, maintenanceMode: e.target.checked })}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <label htmlFor="maintenanceMode" className="ml-2 block text-sm text-gray-900">
+                          Maintenance Mode
+                        </label>
+                      </div>
+
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="allowRegistrations"
+                          checked={settingsForm.allowRegistrations}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, allowRegistrations: e.target.checked })}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <label htmlFor="allowRegistrations" className="ml-2 block text-sm text-gray-900">
+                          Allow New User Registrations
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end space-x-4 pt-6">
+                      <button
+                        type="button"
+                        onClick={() => setShowSettingsForm(false)}
+                        className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                      >
+                        Save Settings
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </motion.div>
+            )}
+
           </AnimatePresence>
         </div>
       </div>
@@ -1701,61 +2420,51 @@ export default function AdminDashboard() {
               </div>
 
               <form onSubmit={async (e) => {
-                e.preventDefault()
+                e.preventDefault();
                 if (!xlsxFile) {
-                  toast.error('No file selected')
-                  return
+                  toast.error('No file selected');
+                  return;
                 }
                 
                 if (!selectedGame) {
-                  toast.error('Please select a game first')
-                  return
+                  toast.error('Please select a game first');
+                  return;
                 }
                 
                 try {
-                  const fileExtension = xlsxFile.name.split('.').pop()?.toLowerCase()
+                  const fileExtension = xlsxFile.name.split('.').pop()?.toLowerCase();
                   
-                  if (fileExtension === 'csv') {
-                    // Handle CSV import for straight games
-                    if (selectedGame.type !== 'straight') {
-                      toast.error('CSV files are only for Straight games. Please use XLSX for Nested games.')
-                      return
+                  if (fileExtension === 'csv' && selectedGame.type === 'straight') {
+                    const result = await strapiApi.importQuestionsCSV(selectedGame.id, '', xlsxFile);
+                    if (result && result.imported > 0) {
+                      toast.success(`${result.imported} question(s) imported successfully to "${selectedGame.name}"!`);
+                    } else {
+                      toast.error('Import finished, but no new questions were added.');
                     }
-                    await strapiApi.importQuestionsCSV(selectedGame.id, '', xlsxFile)
-                    toast.success('Questions imported successfully from CSV!')
-                  } else if (fileExtension === 'xlsx') {
-                    // Handle XLSX import for nested games
-                    if (selectedGame.type !== 'nested') {
-                      toast.error('XLSX files are only for Nested games. Please use CSV for Straight games.')
-                      return
+                  } else if (fileExtension === 'xlsx' && selectedGame.type === 'nested') {
+                    const result = await strapiApi.importQuestionsXLSX(selectedGame.id, xlsxFile);
+                    if (result?.data?.totalImported > 0) {
+                      toast.success(`${result.data.totalImported} questions imported successfully across ${Object.keys(result.data.importedByCategory).length} categories!`);
+                      
+                      // Show detailed import results
+                      Object.entries(result.data.importedByCategory).forEach(([category, count]) => {
+                        toast.success(`${category}: ${count} questions imported`, { duration: 5000 });
+                      });
+                    } else {
+                      toast.error('Import finished, but no new questions were added.');
                     }
-                    
-                    // Create FormData for XLSX file upload
-                    const formData = new FormData()
-                    formData.append('file', xlsxFile)
-                    formData.append('gameId', selectedGame.id)
-                    
-                    const response = await fetch('/api/admin/import-questions-xlsx', {
-                      method: 'POST',
-                      body: formData
-                    })
-                    
-                    if (!response.ok) {
-                      throw new Error('Import failed')
-                    }
-                    
-                    toast.success('Questions imported successfully from XLSX!')
                   } else {
-                    toast.error('Please select a valid CSV or XLSX file')
-                    return
+                    const gameType = selectedGame.type as 'straight' | 'nested';
+                    toast.error(`Invalid file type for this game. Please use a ${gameType === 'straight' ? 'CSV' : 'XLSX'} file.`);
+                    return;
                   }
                   
-                  setShowImportModal(false)
-                  setXlsxFile(null)
-                  fetchQuestions() // Refresh questions list
-                } catch (error) {
-                  console.error('Import error:', error)
-                  toast.error('Failed to import questions. Please check your file format.')
+                  setShowImportModal(false);
+                  setXlsxFile(null);
+                  fetchQuestions(); // Refresh questions list after import
+                } catch (error: any) {
+                  console.error('Import error:', error);
+                  toast.error(error?.response?.data?.error?.message || 'Failed to import questions. Please check server logs and file format.');
                 }
               }} className="space-y-6">
                 <div>

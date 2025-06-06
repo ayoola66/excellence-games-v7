@@ -37,21 +37,14 @@ async function setupPermissions(strapi) {
 
   if (publicRole) {
     // Enable find and findOne for questions
-    const questionPermissions = await strapi.query('plugin::users-permissions.permission').findMany({
+    await strapi.query('plugin::users-permissions.permission').updateMany({
       where: {
         role: publicRole.id,
-        apiId: 'api::question.question'
-      }
+        action: ['find', 'findOne'],
+        subject: 'api::question.question'
+      },
+      data: { enabled: true }
     });
-
-    for (const permission of questionPermissions) {
-      if (permission.action === 'find' || permission.action === 'findOne') {
-        await strapi.query('plugin::users-permissions.permission').update({
-          where: { id: permission.id },
-          data: { enabled: true }
-        });
-      }
-    }
 
     console.log('✅ Question permissions set for Public role');
   }
@@ -62,19 +55,14 @@ async function setupPermissions(strapi) {
   });
 
   if (authenticatedRole) {
-    const questionPermissions = await strapi.query('plugin::users-permissions.permission').findMany({
+    await strapi.query('plugin::users-permissions.permission').updateMany({
       where: {
         role: authenticatedRole.id,
-        apiId: 'api::question.question'
-      }
+        action: ['find', 'findOne', 'create', 'update', 'delete'],
+        subject: 'api::question.question'
+      },
+      data: { enabled: true }
     });
-
-    for (const permission of questionPermissions) {
-      await strapi.query('plugin::users-permissions.permission').update({
-        where: { id: permission.id },
-        data: { enabled: true }
-      });
-    }
 
     console.log('✅ Question permissions set for Authenticated role');
   }

@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import Cookies from 'js-cookie'
 import toast from 'react-hot-toast'
 import { strapiApi } from '@/lib/strapiApi'
+import { useRouter } from 'next/navigation'
 
 interface User {
   id: string
@@ -34,7 +35,7 @@ interface AuthContextType {
   logout: () => void
   adminLogout: () => void
   updateUser: (userData: Partial<User>) => void
-  checkSession: () => Promise<void>
+  verifySession: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -43,53 +44,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [admin, setAdmin] = useState<Admin | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
 
   // Check session on mount
   useEffect(() => {
-    checkSession()
-  }, [])
+    const verifySession = async () => {
+      try {
+        setIsLoading(true)
+        const token = Cookies.get('auth-token')
+        const adminToken = Cookies.get('admin-token')
 
-  const checkSession = async () => {
-    try {
-      const token = Cookies.get('auth-token')
-      const adminToken = Cookies.get('admin-token')
-
-      // Check user session
-      if (token) {
-        try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users/me`, {
-            headers: { Authorization: `Bearer ${token}` }
-          })
-          
-          if (response.ok) {
-            const userData = await response.json()
-            setUser(userData)
-          } else {
-            clearUserTokens()
+        // Check user session
+        if (token) {
+          try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users/me`, {
+              headers: { 
+                Authorization: `Bearer ${token}`,
+                'Cache-Control': 'no-cache'
+              }
+            })
+            
+            if (response.ok) {
+              const userData = await response.json()
+              setUser(userData)
+            } else {
+              // Only clear if response is 401 (Unauthorized)
+              if (response.status === 401) {
+                clearUserTokens()
+              }
+            }
+          } catch (error) {
+            console.error('Failed to verify user session:', error)
+            // Don't clear tokens on network errors
+            if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+              console.log('Network error, keeping session')
+            } else {
+              clearUserTokens()
+            }
           }
-        } catch (error) {
-          console.error('Failed to verify user session:', error)
-          clearUserTokens()
         }
-      }
 
-      // Check admin session
-      if (adminToken) {
-        try {
-          const response = await strapiApi.verifyAdminSession(adminToken)
-          setAdmin(response.data.admin)
-        } catch (error) {
-          console.error('Failed to verify admin session:', error)
-          clearAdminTokens()
+        // Check admin session
+        if (adminToken) {
+          try {
+            const response = await strapiApi.verifyAdminSession(adminToken)
+            setAdmin(response.data.admin)
+          } catch (error: any) {
+            console.error('Failed to verify admin session:', error)
+            // Only clear admin token on auth errors
+            if (error.response?.status === 401) {
+              clearAdminTokens()
+            }
+          }
         }
+      } catch (error) {
+        console.error('Session check failed:', error)
+      } finally {
+        setIsLoading(false)
       }
-    } catch (error) {
-      console.error('Session check failed:', error)
-      clearAllTokens()
-    } finally {
-      setIsLoading(false)
     }
-  }
+
+    verifySession()
+  }, [])
 
   const clearUserTokens = () => {
     Cookies.remove('auth-token')
@@ -107,19 +123,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const login = async (email: string, password: string): Promise<boolean> => {
+    setIsLoading(true)
     try {
       const response = await strapiApi.login(email, password)
       const { jwt, user: userData } = response
 
       Cookies.set('auth-token', jwt, { expires: 7 })
       setUser(userData)
-
       toast.success(`Welcome back, ${userData.fullName || userData.username}!`)
       return true
     } catch (error: any) {
       const message = error.response?.data?.error?.message || error.message || 'Login failed'
       toast.error(message)
       return false
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -141,6 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const register = async (userData: any): Promise<boolean> => {
+    setIsLoading(true)
     try {
       const response = await strapiApi.register({
         username: userData.email,
@@ -155,19 +174,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       Cookies.set('auth-token', jwt, { expires: 7 })
       setUser(newUser)
-
       toast.success('Account created successfully!')
       return true
     } catch (error: any) {
       const message = error.response?.data?.error?.message || 'Registration failed'
       toast.error(message)
       return false
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const logout = () => {
     clearUserTokens()
     toast.success('Logged out successfully')
+    // Redirect to home page after logout
+    if (typeof window !== 'undefined') {
+      window.location.href = '/'
+    }
   }
 
   const adminLogout = async () => {
@@ -189,6 +213,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const verifySession = async () => {
+    try {
+      setIsLoading(true)
+      const token = Cookies.get('auth-token')
+      const adminToken = Cookies.get('admin-token')
+
+      // Check user session
+      if (token) {
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users/me`, {
+            headers: { 
+              Authorization: `Bearer ${token}`,
+              'Cache-Control': 'no-cache'
+            }
+          })
+          
+          if (response.ok) {
+            const userData = await response.json()
+            setUser(userData)
+          } else {
+            // Only clear if response is 401 (Unauthorized)
+            if (response.status === 401) {
+              clearUserTokens()
+            }
+          }
+        } catch (error) {
+          console.error('Failed to verify user session:', error)
+          // Don't clear tokens on network errors
+          if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+            console.log('Network error, keeping session')
+          } else {
+            clearUserTokens()
+          }
+        }
+      }
+
+      // Check admin session
+      if (adminToken) {
+        try {
+          const response = await strapiApi.verifyAdminSession(adminToken)
+          setAdmin(response.data.admin)
+        } catch (error: any) {
+          console.error('Failed to verify admin session:', error)
+          // Only clear admin token on auth errors
+          if (error.response?.status === 401) {
+            clearAdminTokens()
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Session check failed:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const value: AuthContextType = {
     user,
     admin,
@@ -199,7 +279,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     adminLogout,
     updateUser,
-    checkSession
+    verifySession
   }
 
   return (

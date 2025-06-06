@@ -1,12 +1,24 @@
-const path = require('path');
-
 module.exports = ({ env }) => ({
   connection: {
-    client: 'sqlite',
-    connection: {
-      filename: path.join(__dirname, '..', env('DATABASE_FILENAME', '.tmp/data.db')),
-    },
+    client: env('DATABASE_CLIENT', 'sqlite'),
+    connection: env('DATABASE_CLIENT', 'sqlite') === 'sqlite' 
+      ? {
+          filename: env('DATABASE_FILENAME', '.tmp/data.db'),
+        }
+      : {
+          host: env('DATABASE_HOST', 'localhost'),
+          port: env.int('DATABASE_PORT', 5432),
+          database: env('DATABASE_NAME', 'elitegames_dev'),
+          user: env('DATABASE_USERNAME', 'elitegames'),
+          password: env('DATABASE_PASSWORD', 'elitegames123'),
+          ssl: env.bool('DATABASE_SSL', false),
+        },
     useNullAsDefault: true,
+    acquireConnectionTimeout: 60000,
+    pool: {
+      min: 2,
+      max: 10
+    }
   },
 });
 

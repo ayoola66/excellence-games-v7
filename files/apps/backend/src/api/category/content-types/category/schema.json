@@ -16,14 +16,6 @@
       "type": "string",
       "required": true
     },
-    "description": {
-      "type": "text"
-    },
-    "difficulty": {
-      "type": "enumeration",
-      "enum": ["easy", "medium", "hard"],
-      "default": "medium"
-    },
     "questionCount": {
       "type": "integer",
       "default": 0

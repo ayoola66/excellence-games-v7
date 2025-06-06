@@ -20,7 +20,9 @@ import {
   CurrencyPoundIcon,
   TruckIcon,
   CheckCircleIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  LockClosedIcon,
+  CogIcon
 } from '@heroicons/react/24/outline'
 import {
   HomeIcon as HomeSolid,
@@ -67,6 +69,15 @@ interface Order {
   createdAt: string
 }
 
+interface Game {
+  id: string;
+  name: string;
+  description: string;
+  status: 'free' | 'premium';
+  thumbnail: { url: string } | null;
+  totalQuestions: number;
+}
+
 export default function UserDashboard() {
   const { user, logout, isLoading } = useAuth()
   const router = useRouter()
@@ -78,6 +89,7 @@ export default function UserDashboard() {
   const [showCart, setShowCart] = useState(false)
   const [showCheckout, setShowCheckout] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [games, setGames] = useState<Game[]>([])
 
   // Demo products for testing (since backend API is having issues)
   const demoProducts: Product[] = [
@@ -150,7 +162,7 @@ export default function UserDashboard() {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push('/landing')
+      router.push('/login')
     }
   }, [user, isLoading, router])
 
@@ -178,6 +190,10 @@ export default function UserDashboard() {
         console.log('Could not fetch orders:', error)
         setOrders([])
       }
+
+      // Fetch games
+      const gamesResponse = await strapiApi.getGames()
+      setGames(gamesResponse.data)
     } catch (error) {
       console.error('Error fetching data:', error)
       setProducts(demoProducts) // Use demo data as fallback
@@ -316,15 +332,23 @@ export default function UserDashboard() {
     { id: 'profile', name: 'Profile', icon: UserIcon, iconSolid: UserSolid }
   ]
 
-  if (isLoading) {
+  if (isLoading || !user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="flex h-screen items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading your dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-lg font-semibold text-gray-700">Loading Your Dashboard...</p>
         </div>
       </div>
     )
+  }
+
+  const handleGameClick = (game: Game) => {
+    if (game.status === 'premium' && user.subscriptionStatus !== 'premium') {
+      router.push('/subscribe')
+    } else {
+      router.push(`/game/${game.id}`)
+    }
   }
 
   return (
@@ -486,7 +510,7 @@ export default function UserDashboard() {
                     <div className="space-y-3">
                       {orders.slice(0, 3).map((order) => (
                         <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div>
+    <div>
                             <p className="font-medium text-gray-900">Order #{order.orderNumber}</p>
                             <p className="text-sm text-gray-600">
                               {new Date(order.createdAt).toLocaleDateString()} • £{order.total.toFixed(2)}

@@ -64,10 +64,15 @@ export default function HomePage() {
     try {
       setGamesLoading(true)
       const response = await strapiApi.getGames()
-      setGames(response.data || [])
+      if (response?.data) {
+        setGames(response.data)
+      } else {
+        setGames([])
+      }
     } catch (error) {
       console.error('Error fetching games:', error)
       toast.error('Failed to load games')
+      setGames([])
     } finally {
       setGamesLoading(false)
     }
