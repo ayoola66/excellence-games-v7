@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- I need to be make sure everything that I am working on and doing is direcrly from the database. You must not use anything or configure anything to or from Local Storage.
+- Once Stapi is running on server 1337 or any, don't bother to stop it to re-run, just use that. Except there is a MUST to stop and re-run the server for the sake of what you are doing is the only time you should stop it and re-run.
+- If Strapi is not running anywhere because it crashed or you updated something in the code that affected it. Fix it.
