@@ -1,0 +1,1850 @@
+{
+  "config": {
+    "configFile": "/Users/ayoogunrekun/Projects/targeted/files/playwright.config.ts",
+    "rootDir": "/Users/ayoogunrekun/Projects/targeted/files/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 8
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "html",
+        null
+      ],
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/ayoogunrekun/Projects/targeted/files/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 8
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/ayoogunrekun/Projects/targeted/files/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/ayoogunrekun/Projects/targeted/files/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 8
+        },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "/Users/ayoogunrekun/Projects/targeted/files/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/ayoogunrekun/Projects/targeted/files/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 8
+        },
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "/Users/ayoogunrekun/Projects/targeted/files/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/ayoogunrekun/Projects/targeted/files/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 8
+        },
+        "id": "Mobile Chrome",
+        "name": "Mobile Chrome",
+        "testDir": "/Users/ayoogunrekun/Projects/targeted/files/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/ayoogunrekun/Projects/targeted/files/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 8
+        },
+        "id": "Mobile Safari",
+        "name": "Mobile Safari",
+        "testDir": "/Users/ayoogunrekun/Projects/targeted/files/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.52.0",
+    "workers": 8,
+    "webServer": {
+      "command": "cd files/apps/frontend && npm run dev",
+      "url": "http://localhost:3000",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "page-rendering.spec.ts",
+      "file": "page-rendering.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Elite Games Trivia Platform - Page Rendering Tests",
+          "file": "page-rendering.spec.ts",
+          "line": 40,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Homepage renders correctly with all key elements",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 13266,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Found 6 game cards\n"
+                        },
+                        {
+                          "text": "Header found with selector: header\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:33:20.453Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-aa21142c8c5abf4bd6fc",
+              "file": "page-rendering.spec.ts",
+              "line": 46,
+              "column": 7
+            },
+            {
+              "title": "Admin page renders correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 12260,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Admin content found: text=admin\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:33:20.429Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-55713d0ffdd02f57f325",
+              "file": "page-rendering.spec.ts",
+              "line": 118,
+              "column": 7
+            },
+            {
+              "title": "Game page routing works",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 18399,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "No game links found, testing direct game URL\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:33:20.402Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-a827a03da2c1b2dafb71",
+              "file": "page-rendering.spec.ts",
+              "line": 153,
+              "column": 7
+            },
+            {
+              "title": "Landing page renders correctly",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "failed",
+                      "duration": 12661,
+                      "error": {
+                        "message": "Error: Footer should be visible: Error: strict mode violation: locator('footer') resolved to 2 elements:\n    1) <footer class=\"bg-blue-950 text-blue-200 py-12\">…</footer> aka locator('footer').filter({ hasText: 'Elite GamesPremium British' })\n    2) <footer class=\"w-full py-6 bg-blue-900 text-white text-center text-sm shadow-inner\">…</footer> aka getByText('Elite Games © 2025 · Made')\n\nCall log:\n\u001b[2m  - Footer should be visible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('footer')\u001b[22m\n",
+                        "stack": "Error: Footer should be visible: Error: strict mode violation: locator('footer') resolved to 2 elements:\n    1) <footer class=\"bg-blue-950 text-blue-200 py-12\">…</footer> aka locator('footer').filter({ hasText: 'Elite GamesPremium British' })\n    2) <footer class=\"w-full py-6 bg-blue-900 text-white text-center text-sm shadow-inner\">…</footer> aka getByText('Elite Games © 2025 · Made')\n\nCall log:\n\u001b[2m  - Footer should be visible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('footer')\u001b[22m\n\n    at checkFooter (/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts:21:52)\n    at /Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts:211:11",
+                        "location": {
+                          "file": "/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts",
+                          "column": 52,
+                          "line": 21
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m checkFooter(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\n \u001b[90m 20 |\u001b[39m   \u001b[36mconst\u001b[39m footer \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'footer'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m   \u001b[36mawait\u001b[39m expect(footer\u001b[33m,\u001b[39m \u001b[32m'Footer should be visible'\u001b[39m)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m   \n \u001b[90m 23 |\u001b[39m   \u001b[90m// Check footer content\u001b[39m\n \u001b[90m 24 |\u001b[39m   \u001b[36mawait\u001b[39m expect(footer\u001b[33m,\u001b[39m \u001b[32m'Footer should contain Elite Games branding'\u001b[39m)\u001b[33m.\u001b[39mtoContainText(\u001b[32m'Elite Games'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts",
+                            "column": 52,
+                            "line": 21
+                          },
+                          "message": "Error: Footer should be visible: Error: strict mode violation: locator('footer') resolved to 2 elements:\n    1) <footer class=\"bg-blue-950 text-blue-200 py-12\">…</footer> aka locator('footer').filter({ hasText: 'Elite GamesPremium British' })\n    2) <footer class=\"w-full py-6 bg-blue-900 text-white text-center text-sm shadow-inner\">…</footer> aka getByText('Elite Games © 2025 · Made')\n\nCall log:\n\u001b[2m  - Footer should be visible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('footer')\u001b[22m\n\n\n\u001b[0m \u001b[90m 19 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m checkFooter(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\n \u001b[90m 20 |\u001b[39m   \u001b[36mconst\u001b[39m footer \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'footer'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m   \u001b[36mawait\u001b[39m expect(footer\u001b[33m,\u001b[39m \u001b[32m'Footer should be visible'\u001b[39m)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m   \n \u001b[90m 23 |\u001b[39m   \u001b[90m// Check footer content\u001b[39m\n \u001b[90m 24 |\u001b[39m   \u001b[36mawait\u001b[39m expect(footer\u001b[33m,\u001b[39m \u001b[32m'Footer should contain Elite Games branding'\u001b[39m)\u001b[33m.\u001b[39mtoContainText(\u001b[32m'Elite Games'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at checkFooter (/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts:21:52)\u001b[22m\n\u001b[2m    at /Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts:211:11\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:33:20.430Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/ayoogunrekun/Projects/targeted/files/test-results/page-rendering-Elite-Games-529b3-ding-page-renders-correctly-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/ayoogunrekun/Projects/targeted/files/test-results/page-rendering-Elite-Games-529b3-ding-page-renders-correctly-chromium/video.webm"
+                        },
+                        {
+                          "name": "_error-context-0",
+                          "contentType": "text/markdown",
+                          "path": "/Users/ayoogunrekun/Projects/targeted/files/test-results/page-rendering-Elite-Games-529b3-ding-page-renders-correctly-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts",
+                        "column": 52,
+                        "line": 21
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-66fd7411b1ca263f7245",
+              "file": "page-rendering.spec.ts",
+              "line": 201,
+              "column": 7
+            },
+            {
+              "title": "Profile page access",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 12564,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:33:20.456Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-52611fdd150c8c5fe2a5",
+              "file": "page-rendering.spec.ts",
+              "line": 219,
+              "column": 7
+            },
+            {
+              "title": "Responsive design - Mobile viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 12777,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:33:20.426Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-6f2bdacca474c5c8d2eb",
+              "file": "page-rendering.spec.ts",
+              "line": 232,
+              "column": 7
+            },
+            {
+              "title": "Navigation and interaction elements are clickable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 12513,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Found 4 visible buttons and 0 visible links\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:33:20.431Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-4bd9fa44a8c2d25c26c8",
+              "file": "page-rendering.spec.ts",
+              "line": 258,
+              "column": 7
+            },
+            {
+              "title": "CSS and styling load correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 12352,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Body background color: rgba(0, 0, 0, 0)\n"
+                        },
+                        {
+                          "text": "Body font family: __Inter_e8ce0c, __Inter_Fallback_e8ce0c\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:33:20.436Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-841d940c4e17960511de",
+              "file": "page-rendering.spec.ts",
+              "line": 293,
+              "column": 7
+            },
+            {
+              "title": "Homepage renders correctly with all key elements",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 11723,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Found 4 game cards\n"
+                        },
+                        {
+                          "text": "Header found with selector: header\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:33:37.856Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-09f669c78eeec0483b24",
+              "file": "page-rendering.spec.ts",
+              "line": 46,
+              "column": 7
+            },
+            {
+              "title": "Admin page renders correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 8750,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Admin content found: text=admin\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:33:37.854Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-e9147804a04e9af18349",
+              "file": "page-rendering.spec.ts",
+              "line": 118,
+              "column": 7
+            },
+            {
+              "title": "Game page routing works",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 11,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 6851,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "No game links found, testing direct game URL\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:33:37.906Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-12a01626170470d97ad8",
+              "file": "page-rendering.spec.ts",
+              "line": 153,
+              "column": 7
+            },
+            {
+              "title": "Landing page renders correctly",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 7,
+                      "status": "failed",
+                      "duration": 6142,
+                      "error": {
+                        "message": "Error: Footer should be visible: Error: strict mode violation: locator('footer') resolved to 2 elements:\n    1) <footer class=\"bg-blue-950 text-blue-200 py-12\">…</footer> aka locator('footer').filter({ hasText: 'Elite GamesPremium British' })\n    2) <footer class=\"w-full py-6 bg-blue-900 text-white text-center text-sm shadow-inner\">…</footer> aka getByText('Elite Games © 2025 · Made')\n\nCall log:\n\u001b[2m  - Footer should be visible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('footer')\u001b[22m\n",
+                        "stack": "Error: Footer should be visible: Error: strict mode violation: locator('footer') resolved to 2 elements:\n    1) <footer class=\"bg-blue-950 text-blue-200 py-12\">…</footer> aka locator('footer').filter({ hasText: 'Elite GamesPremium British' })\n    2) <footer class=\"w-full py-6 bg-blue-900 text-white text-center text-sm shadow-inner\">…</footer> aka getByText('Elite Games © 2025 · Made')\n\nCall log:\n\u001b[2m  - Footer should be visible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('footer')\u001b[22m\n\n    at checkFooter (/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts:21:52)\n    at /Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts:211:11",
+                        "location": {
+                          "file": "/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts",
+                          "column": 52,
+                          "line": 21
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m checkFooter(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\n \u001b[90m 20 |\u001b[39m   \u001b[36mconst\u001b[39m footer \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'footer'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m   \u001b[36mawait\u001b[39m expect(footer\u001b[33m,\u001b[39m \u001b[32m'Footer should be visible'\u001b[39m)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m   \n \u001b[90m 23 |\u001b[39m   \u001b[90m// Check footer content\u001b[39m\n \u001b[90m 24 |\u001b[39m   \u001b[36mawait\u001b[39m expect(footer\u001b[33m,\u001b[39m \u001b[32m'Footer should contain Elite Games branding'\u001b[39m)\u001b[33m.\u001b[39mtoContainText(\u001b[32m'Elite Games'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts",
+                            "column": 52,
+                            "line": 21
+                          },
+                          "message": "Error: Footer should be visible: Error: strict mode violation: locator('footer') resolved to 2 elements:\n    1) <footer class=\"bg-blue-950 text-blue-200 py-12\">…</footer> aka locator('footer').filter({ hasText: 'Elite GamesPremium British' })\n    2) <footer class=\"w-full py-6 bg-blue-900 text-white text-center text-sm shadow-inner\">…</footer> aka getByText('Elite Games © 2025 · Made')\n\nCall log:\n\u001b[2m  - Footer should be visible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('footer')\u001b[22m\n\n\n\u001b[0m \u001b[90m 19 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m checkFooter(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\n \u001b[90m 20 |\u001b[39m   \u001b[36mconst\u001b[39m footer \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'footer'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m   \u001b[36mawait\u001b[39m expect(footer\u001b[33m,\u001b[39m \u001b[32m'Footer should be visible'\u001b[39m)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m   \n \u001b[90m 23 |\u001b[39m   \u001b[90m// Check footer content\u001b[39m\n \u001b[90m 24 |\u001b[39m   \u001b[36mawait\u001b[39m expect(footer\u001b[33m,\u001b[39m \u001b[32m'Footer should contain Elite Games branding'\u001b[39m)\u001b[33m.\u001b[39mtoContainText(\u001b[32m'Elite Games'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at checkFooter (/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts:21:52)\u001b[22m\n\u001b[2m    at /Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts:211:11\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:33:37.856Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/ayoogunrekun/Projects/targeted/files/test-results/page-rendering-Elite-Games-529b3-ding-page-renders-correctly-firefox/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/ayoogunrekun/Projects/targeted/files/test-results/page-rendering-Elite-Games-529b3-ding-page-renders-correctly-firefox/video.webm"
+                        },
+                        {
+                          "name": "_error-context-0",
+                          "contentType": "text/markdown",
+                          "path": "/Users/ayoogunrekun/Projects/targeted/files/test-results/page-rendering-Elite-Games-529b3-ding-page-renders-correctly-firefox/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts",
+                        "column": 52,
+                        "line": 21
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-0be3ec3978cd20e2fe6d",
+              "file": "page-rendering.spec.ts",
+              "line": 201,
+              "column": 7
+            },
+            {
+              "title": "Profile page access",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 7860,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:33:37.994Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-ecd5eb9f4d2bbba05ee7",
+              "file": "page-rendering.spec.ts",
+              "line": 219,
+              "column": 7
+            },
+            {
+              "title": "Responsive design - Mobile viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 13,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 6801,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:33:38.048Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-40c62cd0da2b95caa6a4",
+              "file": "page-rendering.spec.ts",
+              "line": 232,
+              "column": 7
+            },
+            {
+              "title": "Navigation and interaction elements are clickable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 14,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9105,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Found 4 visible buttons and 0 visible links\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:33:38.547Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-4d764b2de8fbeda0ddfe",
+              "file": "page-rendering.spec.ts",
+              "line": 258,
+              "column": 7
+            },
+            {
+              "title": "CSS and styling load correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 15,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 9215,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Body background color: rgba(0, 0, 0, 0)\n"
+                        },
+                        {
+                          "text": "Body font family: \"__Inter_e8ce0c\", \"__Inter_Fallback_e8ce0c\"\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:33:43.372Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-6e5aa132401d7aabe183",
+              "file": "page-rendering.spec.ts",
+              "line": 293,
+              "column": 7
+            },
+            {
+              "title": "Homepage renders correctly with all key elements",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 16,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 30835,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Found 4 game cards\n"
+                        },
+                        {
+                          "text": "Header found with selector: header\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:33:54.699Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-80781cfeb2f36d5f2f55",
+              "file": "page-rendering.spec.ts",
+              "line": 46,
+              "column": 7
+            },
+            {
+              "title": "Admin page renders correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 18,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 25613,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Admin content found: text=admin\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:33:57.353Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-f165d103189a161b70c2",
+              "file": "page-rendering.spec.ts",
+              "line": 118,
+              "column": 7
+            },
+            {
+              "title": "Game page routing works",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 17,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 26373,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "No game links found, testing direct game URL\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:33:55.759Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-751d116f30c52407c460",
+              "file": "page-rendering.spec.ts",
+              "line": 153,
+              "column": 7
+            },
+            {
+              "title": "Landing page renders correctly",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 19,
+                      "parallelIndex": 3,
+                      "status": "failed",
+                      "duration": 27464,
+                      "error": {
+                        "message": "Error: Footer should be visible: Error: strict mode violation: locator('footer') resolved to 2 elements:\n    1) <footer class=\"bg-blue-950 text-blue-200 py-12\">…</footer> aka locator('footer').filter({ hasText: 'Elite GamesPremium British' })\n    2) <footer class=\"w-full py-6 bg-blue-900 text-white text-center text-sm shadow-inner\">…</footer> aka getByText('Elite Games © 2025 · Made')\n\nCall log:\n\u001b[2m  - Footer should be visible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('footer')\u001b[22m\n",
+                        "stack": "Error: Footer should be visible: Error: strict mode violation: locator('footer') resolved to 2 elements:\n    1) <footer class=\"bg-blue-950 text-blue-200 py-12\">…</footer> aka locator('footer').filter({ hasText: 'Elite GamesPremium British' })\n    2) <footer class=\"w-full py-6 bg-blue-900 text-white text-center text-sm shadow-inner\">…</footer> aka getByText('Elite Games © 2025 · Made')\n\nCall log:\n\u001b[2m  - Footer should be visible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('footer')\u001b[22m\n\n    at checkFooter (/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts:21:52)\n    at /Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts:211:11",
+                        "location": {
+                          "file": "/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts",
+                          "column": 52,
+                          "line": 21
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m checkFooter(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\n \u001b[90m 20 |\u001b[39m   \u001b[36mconst\u001b[39m footer \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'footer'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m   \u001b[36mawait\u001b[39m expect(footer\u001b[33m,\u001b[39m \u001b[32m'Footer should be visible'\u001b[39m)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m   \n \u001b[90m 23 |\u001b[39m   \u001b[90m// Check footer content\u001b[39m\n \u001b[90m 24 |\u001b[39m   \u001b[36mawait\u001b[39m expect(footer\u001b[33m,\u001b[39m \u001b[32m'Footer should contain Elite Games branding'\u001b[39m)\u001b[33m.\u001b[39mtoContainText(\u001b[32m'Elite Games'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts",
+                            "column": 52,
+                            "line": 21
+                          },
+                          "message": "Error: Footer should be visible: Error: strict mode violation: locator('footer') resolved to 2 elements:\n    1) <footer class=\"bg-blue-950 text-blue-200 py-12\">…</footer> aka locator('footer').filter({ hasText: 'Elite GamesPremium British' })\n    2) <footer class=\"w-full py-6 bg-blue-900 text-white text-center text-sm shadow-inner\">…</footer> aka getByText('Elite Games © 2025 · Made')\n\nCall log:\n\u001b[2m  - Footer should be visible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('footer')\u001b[22m\n\n\n\u001b[0m \u001b[90m 19 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m checkFooter(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\n \u001b[90m 20 |\u001b[39m   \u001b[36mconst\u001b[39m footer \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'footer'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m   \u001b[36mawait\u001b[39m expect(footer\u001b[33m,\u001b[39m \u001b[32m'Footer should be visible'\u001b[39m)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m   \n \u001b[90m 23 |\u001b[39m   \u001b[90m// Check footer content\u001b[39m\n \u001b[90m 24 |\u001b[39m   \u001b[36mawait\u001b[39m expect(footer\u001b[33m,\u001b[39m \u001b[32m'Footer should contain Elite Games branding'\u001b[39m)\u001b[33m.\u001b[39mtoContainText(\u001b[32m'Elite Games'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at checkFooter (/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts:21:52)\u001b[22m\n\u001b[2m    at /Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts:211:11\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:33:59.293Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/ayoogunrekun/Projects/targeted/files/test-results/page-rendering-Elite-Games-529b3-ding-page-renders-correctly-webkit/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/ayoogunrekun/Projects/targeted/files/test-results/page-rendering-Elite-Games-529b3-ding-page-renders-correctly-webkit/video.webm"
+                        },
+                        {
+                          "name": "_error-context-0",
+                          "contentType": "text/markdown",
+                          "path": "/Users/ayoogunrekun/Projects/targeted/files/test-results/page-rendering-Elite-Games-529b3-ding-page-renders-correctly-webkit/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts",
+                        "column": 52,
+                        "line": 21
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-33e3a16c5e5bb83d8893",
+              "file": "page-rendering.spec.ts",
+              "line": 201,
+              "column": 7
+            },
+            {
+              "title": "Profile page access",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 20,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 27277,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:34:00.608Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-0fe15521514e65ab9316",
+              "file": "page-rendering.spec.ts",
+              "line": 219,
+              "column": 7
+            },
+            {
+              "title": "Responsive design - Mobile viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 21,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 20427,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:34:00.620Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-410602b9415a72d96f1b",
+              "file": "page-rendering.spec.ts",
+              "line": 232,
+              "column": 7
+            },
+            {
+              "title": "Navigation and interaction elements are clickable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 22,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 27565,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Found 8 visible buttons and 0 visible links\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:34:01.761Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-7edb2a37ddca1f00b411",
+              "file": "page-rendering.spec.ts",
+              "line": 258,
+              "column": 7
+            },
+            {
+              "title": "CSS and styling load correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 23,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 27308,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Body background color: rgba(0, 0, 0, 0)\n"
+                        },
+                        {
+                          "text": "Body font family: __Inter_e8ce0c, __Inter_Fallback_e8ce0c\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:34:02.328Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-8493465c982d14d0e38b",
+              "file": "page-rendering.spec.ts",
+              "line": 293,
+              "column": 7
+            },
+            {
+              "title": "Homepage renders correctly with all key elements",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 24,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 18662,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Found 4 game cards\n"
+                        },
+                        {
+                          "text": "Header found with selector: header\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:34:31.711Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-6e0da6d49e917105b9ab",
+              "file": "page-rendering.spec.ts",
+              "line": 46,
+              "column": 7
+            },
+            {
+              "title": "Admin page renders correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 25,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 14240,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Admin content found: text=admin\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:34:36.351Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-6b4430e9c7eda9cc0193",
+              "file": "page-rendering.spec.ts",
+              "line": 118,
+              "column": 7
+            },
+            {
+              "title": "Game page routing works",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 26,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 16730,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "No game links found, testing direct game URL\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:34:36.997Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-77563ce8e557695df468",
+              "file": "page-rendering.spec.ts",
+              "line": 153,
+              "column": 7
+            },
+            {
+              "title": "Landing page renders correctly",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 27,
+                      "parallelIndex": 1,
+                      "status": "failed",
+                      "duration": 17444,
+                      "error": {
+                        "message": "Error: Footer should be visible: Error: strict mode violation: locator('footer') resolved to 2 elements:\n    1) <footer class=\"bg-blue-950 text-blue-200 py-12\">…</footer> aka locator('footer').filter({ hasText: 'Elite GamesPremium British' })\n    2) <footer class=\"w-full py-6 bg-blue-900 text-white text-center text-sm shadow-inner\">…</footer> aka getByText('Elite Games © 2025 · Made')\n\nCall log:\n\u001b[2m  - Footer should be visible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('footer')\u001b[22m\n",
+                        "stack": "Error: Footer should be visible: Error: strict mode violation: locator('footer') resolved to 2 elements:\n    1) <footer class=\"bg-blue-950 text-blue-200 py-12\">…</footer> aka locator('footer').filter({ hasText: 'Elite GamesPremium British' })\n    2) <footer class=\"w-full py-6 bg-blue-900 text-white text-center text-sm shadow-inner\">…</footer> aka getByText('Elite Games © 2025 · Made')\n\nCall log:\n\u001b[2m  - Footer should be visible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('footer')\u001b[22m\n\n    at checkFooter (/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts:21:52)\n    at /Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts:211:11",
+                        "location": {
+                          "file": "/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts",
+                          "column": 52,
+                          "line": 21
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m checkFooter(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\n \u001b[90m 20 |\u001b[39m   \u001b[36mconst\u001b[39m footer \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'footer'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m   \u001b[36mawait\u001b[39m expect(footer\u001b[33m,\u001b[39m \u001b[32m'Footer should be visible'\u001b[39m)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m   \n \u001b[90m 23 |\u001b[39m   \u001b[90m// Check footer content\u001b[39m\n \u001b[90m 24 |\u001b[39m   \u001b[36mawait\u001b[39m expect(footer\u001b[33m,\u001b[39m \u001b[32m'Footer should contain Elite Games branding'\u001b[39m)\u001b[33m.\u001b[39mtoContainText(\u001b[32m'Elite Games'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts",
+                            "column": 52,
+                            "line": 21
+                          },
+                          "message": "Error: Footer should be visible: Error: strict mode violation: locator('footer') resolved to 2 elements:\n    1) <footer class=\"bg-blue-950 text-blue-200 py-12\">…</footer> aka locator('footer').filter({ hasText: 'Elite GamesPremium British' })\n    2) <footer class=\"w-full py-6 bg-blue-900 text-white text-center text-sm shadow-inner\">…</footer> aka getByText('Elite Games © 2025 · Made')\n\nCall log:\n\u001b[2m  - Footer should be visible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('footer')\u001b[22m\n\n\n\u001b[0m \u001b[90m 19 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m checkFooter(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\n \u001b[90m 20 |\u001b[39m   \u001b[36mconst\u001b[39m footer \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'footer'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m   \u001b[36mawait\u001b[39m expect(footer\u001b[33m,\u001b[39m \u001b[32m'Footer should be visible'\u001b[39m)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m   \n \u001b[90m 23 |\u001b[39m   \u001b[90m// Check footer content\u001b[39m\n \u001b[90m 24 |\u001b[39m   \u001b[36mawait\u001b[39m expect(footer\u001b[33m,\u001b[39m \u001b[32m'Footer should contain Elite Games branding'\u001b[39m)\u001b[33m.\u001b[39mtoContainText(\u001b[32m'Elite Games'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at checkFooter (/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts:21:52)\u001b[22m\n\u001b[2m    at /Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts:211:11\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:34:37.568Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/ayoogunrekun/Projects/targeted/files/test-results/page-rendering-Elite-Games-529b3-ding-page-renders-correctly-Mobile-Chrome/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/ayoogunrekun/Projects/targeted/files/test-results/page-rendering-Elite-Games-529b3-ding-page-renders-correctly-Mobile-Chrome/video.webm"
+                        },
+                        {
+                          "name": "_error-context-0",
+                          "contentType": "text/markdown",
+                          "path": "/Users/ayoogunrekun/Projects/targeted/files/test-results/page-rendering-Elite-Games-529b3-ding-page-renders-correctly-Mobile-Chrome/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts",
+                        "column": 52,
+                        "line": 21
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-09502d03239c6c9fde84",
+              "file": "page-rendering.spec.ts",
+              "line": 201,
+              "column": 7
+            },
+            {
+              "title": "Profile page access",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 28,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 16749,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:34:37.589Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-7b8211af8bf34ed10424",
+              "file": "page-rendering.spec.ts",
+              "line": 219,
+              "column": 7
+            },
+            {
+              "title": "Responsive design - Mobile viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 29,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 14720,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:34:37.694Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-b1dea4777cd2e168b5f2",
+              "file": "page-rendering.spec.ts",
+              "line": 232,
+              "column": 7
+            },
+            {
+              "title": "Navigation and interaction elements are clickable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 30,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 15809,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Found 4 visible buttons and 0 visible links\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:34:37.802Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-20db988f09e090c6a948",
+              "file": "page-rendering.spec.ts",
+              "line": 258,
+              "column": 7
+            },
+            {
+              "title": "CSS and styling load correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 31,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 15158,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Body background color: rgba(0, 0, 0, 0)\n"
+                        },
+                        {
+                          "text": "Body font family: __Inter_e8ce0c, __Inter_Fallback_e8ce0c\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:34:40.535Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-4c6044ab57e507562065",
+              "file": "page-rendering.spec.ts",
+              "line": 293,
+              "column": 7
+            },
+            {
+              "title": "Homepage renders correctly with all key elements",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [
+                    {
+                      "workerIndex": 32,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 31854,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Found 4 game cards\n"
+                        },
+                        {
+                          "text": "Header found with selector: header\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:34:53.956Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-0131c8eeaa047701268f",
+              "file": "page-rendering.spec.ts",
+              "line": 46,
+              "column": 7
+            },
+            {
+              "title": "Admin page renders correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [
+                    {
+                      "workerIndex": 33,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 23555,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Admin content found: text=admin\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:34:54.729Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-989904925d701f1d2805",
+              "file": "page-rendering.spec.ts",
+              "line": 118,
+              "column": 7
+            },
+            {
+              "title": "Game page routing works",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [
+                    {
+                      "workerIndex": 34,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 25689,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "No game links found, testing direct game URL\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:34:56.120Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-468af8b835034442bdca",
+              "file": "page-rendering.spec.ts",
+              "line": 153,
+              "column": 7
+            },
+            {
+              "title": "Landing page renders correctly",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [
+                    {
+                      "workerIndex": 35,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 28260,
+                      "error": {
+                        "message": "Error: Footer should be visible: Error: strict mode violation: locator('footer') resolved to 2 elements:\n    1) <footer class=\"bg-blue-950 text-blue-200 py-12\">…</footer> aka locator('footer').filter({ hasText: 'Elite GamesPremium British' })\n    2) <footer class=\"w-full py-6 bg-blue-900 text-white text-center text-sm shadow-inner\">…</footer> aka getByText('Elite Games © 2025 · Made')\n\nCall log:\n\u001b[2m  - Footer should be visible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('footer')\u001b[22m\n",
+                        "stack": "Error: Footer should be visible: Error: strict mode violation: locator('footer') resolved to 2 elements:\n    1) <footer class=\"bg-blue-950 text-blue-200 py-12\">…</footer> aka locator('footer').filter({ hasText: 'Elite GamesPremium British' })\n    2) <footer class=\"w-full py-6 bg-blue-900 text-white text-center text-sm shadow-inner\">…</footer> aka getByText('Elite Games © 2025 · Made')\n\nCall log:\n\u001b[2m  - Footer should be visible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('footer')\u001b[22m\n\n    at checkFooter (/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts:21:52)\n    at /Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts:211:11",
+                        "location": {
+                          "file": "/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts",
+                          "column": 52,
+                          "line": 21
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m checkFooter(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\n \u001b[90m 20 |\u001b[39m   \u001b[36mconst\u001b[39m footer \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'footer'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m   \u001b[36mawait\u001b[39m expect(footer\u001b[33m,\u001b[39m \u001b[32m'Footer should be visible'\u001b[39m)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m   \n \u001b[90m 23 |\u001b[39m   \u001b[90m// Check footer content\u001b[39m\n \u001b[90m 24 |\u001b[39m   \u001b[36mawait\u001b[39m expect(footer\u001b[33m,\u001b[39m \u001b[32m'Footer should contain Elite Games branding'\u001b[39m)\u001b[33m.\u001b[39mtoContainText(\u001b[32m'Elite Games'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts",
+                            "column": 52,
+                            "line": 21
+                          },
+                          "message": "Error: Footer should be visible: Error: strict mode violation: locator('footer') resolved to 2 elements:\n    1) <footer class=\"bg-blue-950 text-blue-200 py-12\">…</footer> aka locator('footer').filter({ hasText: 'Elite GamesPremium British' })\n    2) <footer class=\"w-full py-6 bg-blue-900 text-white text-center text-sm shadow-inner\">…</footer> aka getByText('Elite Games © 2025 · Made')\n\nCall log:\n\u001b[2m  - Footer should be visible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('footer')\u001b[22m\n\n\n\u001b[0m \u001b[90m 19 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m checkFooter(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\n \u001b[90m 20 |\u001b[39m   \u001b[36mconst\u001b[39m footer \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'footer'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m   \u001b[36mawait\u001b[39m expect(footer\u001b[33m,\u001b[39m \u001b[32m'Footer should be visible'\u001b[39m)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m   \n \u001b[90m 23 |\u001b[39m   \u001b[90m// Check footer content\u001b[39m\n \u001b[90m 24 |\u001b[39m   \u001b[36mawait\u001b[39m expect(footer\u001b[33m,\u001b[39m \u001b[32m'Footer should contain Elite Games branding'\u001b[39m)\u001b[33m.\u001b[39mtoContainText(\u001b[32m'Elite Games'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at checkFooter (/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts:21:52)\u001b[22m\n\u001b[2m    at /Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts:211:11\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:34:56.841Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/ayoogunrekun/Projects/targeted/files/test-results/page-rendering-Elite-Games-529b3-ding-page-renders-correctly-Mobile-Safari/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/ayoogunrekun/Projects/targeted/files/test-results/page-rendering-Elite-Games-529b3-ding-page-renders-correctly-Mobile-Safari/video.webm"
+                        },
+                        {
+                          "name": "_error-context-0",
+                          "contentType": "text/markdown",
+                          "path": "/Users/ayoogunrekun/Projects/targeted/files/test-results/page-rendering-Elite-Games-529b3-ding-page-renders-correctly-Mobile-Safari/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/ayoogunrekun/Projects/targeted/files/tests/e2e/page-rendering.spec.ts",
+                        "column": 52,
+                        "line": 21
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-009568a27abb52220a6d",
+              "file": "page-rendering.spec.ts",
+              "line": 201,
+              "column": 7
+            },
+            {
+              "title": "Profile page access",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [
+                    {
+                      "workerIndex": 36,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 27369,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:34:57.439Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-79010e50f05b9c76fb3a",
+              "file": "page-rendering.spec.ts",
+              "line": 219,
+              "column": 7
+            },
+            {
+              "title": "Responsive design - Mobile viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [
+                    {
+                      "workerIndex": 37,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 17497,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:34:57.566Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-65fc19e97d6a5ec1ab3b",
+              "file": "page-rendering.spec.ts",
+              "line": 232,
+              "column": 7
+            },
+            {
+              "title": "Navigation and interaction elements are clickable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [
+                    {
+                      "workerIndex": 38,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 28157,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Found 8 visible buttons and 0 visible links\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:34:57.865Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-f39c8c82a47d7943b5eb",
+              "file": "page-rendering.spec.ts",
+              "line": 258,
+              "column": 7
+            },
+            {
+              "title": "CSS and styling load correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [
+                    {
+                      "workerIndex": 39,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 22059,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Body background color: rgba(0, 0, 0, 0)\n"
+                        },
+                        {
+                          "text": "Body font family: __Inter_e8ce0c, __Inter_Fallback_e8ce0c\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-02T01:34:59.024Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73aa7485c96661154cb7-4adb26c0f3dbce0da513",
+              "file": "page-rendering.spec.ts",
+              "line": 293,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-06-02T01:33:18.712Z",
+    "duration": 128937.635,
+    "expected": 35,
+    "skipped": 0,
+    "unexpected": 5,
+    "flaky": 0
+  }
+}
