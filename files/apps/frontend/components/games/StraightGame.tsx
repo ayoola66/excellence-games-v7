@@ -244,7 +244,7 @@ export default function StraightGame({ gameId, initialGame }: StraightGameProps)
             Failed to load questions
           </h2>
           <button 
-            onClick={() => router.push(user ? '/user/dashboard' : '/')}
+            onClick={() => router.push('/user/games')}
             className="text-blue-600 hover:text-blue-800"
           >
             Return to Games
@@ -260,7 +260,12 @@ export default function StraightGame({ gameId, initialGame }: StraightGameProps)
       <div className="flex-1 flex flex-col">
         {/* Header */}
         <header className="bg-white shadow-sm border-b border-gray-200 py-3 px-4 flex justify-between items-center">
-          <button onClick={() => router.push(user ? '/user/dashboard' : '/')} className="text-gray-600 hover:text-gray-900 ml-16 md:ml-56">← Back</button>
+          <button
+            onClick={() => router.push('/user/games')}
+            className="flex items-center text-gray-600 hover:text-gray-900 transition-colors ml-16 md:ml-56"
+          >
+            Back to Games
+          </button>
           <h1 className="text-lg font-bold text-gray-900">{game.name}</h1>
           <div className="flex gap-4">
             <button onClick={handleReset} className="text-sm text-blue-600">Reset</button>

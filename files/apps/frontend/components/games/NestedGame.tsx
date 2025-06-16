@@ -290,7 +290,7 @@ export default function NestedGame({ gameId, initialGame }: NestedGameProps) {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
               <button
-                onClick={() => router.push(user ? '/user/dashboard' : '/')}
+                onClick={() => router.push('/user/games')}
                 className="flex items-center text-gray-600 hover:text-gray-900 transition-colors ml-16 md:ml-56"
               >
                 Back to Games
@@ -413,9 +413,9 @@ export default function NestedGame({ gameId, initialGame }: NestedGameProps) {
                   {[1,2,3,4,5,6].map(n=>{
                     const category = game.categories.find(c=>(c as any).cardNumber===n) || game.categories[n-1]
                     const label = n===6 ? '★' : (category?.name || n)
-                    const isActive = awaitingConfirm && diceRoll===n && n!==6
+                    const isActive = (awaitingConfirm || gamePhase === 'question') && diceRoll===n && n!==6
                     const isStarRollActive = diceRoll === 6 && n !== 6
-                    const isDisabled = awaitingConfirm && diceRoll!==n && diceRoll!==6 && !isStarRollActive
+                    const isDisabled = (awaitingConfirm || gamePhase === 'question') && diceRoll!==n && diceRoll!==6 && !isStarRollActive
                     return (
                       <div 
                         key={n} 
@@ -426,7 +426,7 @@ export default function NestedGame({ gameId, initialGame }: NestedGameProps) {
                         className={clsx(
                           'h-28 sm:h-32 rounded-xl shadow flex items-center justify-center text-xl font-bold select-none cursor-pointer transition-all duration-300',
                           isDisabled ? 'opacity-40 pointer-events-none' : 'hover:shadow-lg',
-                          isActive && 'bg-gradient-to-br from-blue-100 to-indigo-200 ring-4 ring-blue-500',
+                          (isActive || (gamePhase === 'question' && diceRoll === n)) && 'bg-gradient-to-br from-blue-100 to-indigo-200 ring-4 ring-blue-500',
                           isStarRollActive && 'bg-gradient-to-br from-blue-100 to-indigo-200 ring-4 ring-blue-500',
                           n === 6 && 'bg-gradient-to-br from-yellow-100 to-amber-200',
                           !isActive && !isStarRollActive && !isDisabled && 'bg-white'
