@@ -194,20 +194,14 @@ export default function NestedGame({ gameId, initialGame }: NestedGameProps) {
     setShowResult(false)
     setAnswerResult(null)
     setCurrentQuestion(null)
+    setDiceRoll(null)
+    setGamePhase('roll')
+    setCurrentCategory(null)
     setShowOptions(false)
     setShowAnswer(false)
     setAnswerEvaluated(false)
     setAnswerCorrect(null)
-
-    // Check if all questions in category are answered
-    const remainingQuestions = availableQuestions.filter((q: Question) => !answeredQuestions.includes(q.id))
-    if (remainingQuestions.length === 0) {
-      setGamePhase('category')
-      setCurrentCategory(null)
-      toast.success('Category completed!')
-    } else {
-      selectRandomQuestion()
-    }
+    setAwaitingConfirm(false)
   }
 
   const getOptionClass = (option: string) => {
@@ -269,30 +263,12 @@ export default function NestedGame({ gameId, initialGame }: NestedGameProps) {
                   </p>
                 )}
               </div>
-              {currentCategory && (
-                <button
-                  onClick={() => {
-                    setGamePhase('category')
-                    setCurrentCategory(null)
-                    setCurrentQuestion(null)
-                  }}
-                  className="text-blue-600 hover:text-blue-800"
-                >
-                  Change Category
-                </button>
-              )}
+              <div className="w-24"></div> {/* Spacer for layout balance */}
             </div>
           </div>
         </header>
 
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Game Progress */}
-          <div className="mb-8 text-center">
-            <p className="text-gray-600">
-              Questions Answered: {answeredQuestions.length}
-            </p>
-          </div>
-
           {/* Dice + Question UI (mirrors StraightGame) */}
           {gamePhase!=='category' && (
             <div className="flex flex-col md:flex-row gap-8 w-full max-w-6xl">
