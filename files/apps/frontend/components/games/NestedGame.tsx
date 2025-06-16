@@ -20,7 +20,9 @@ interface Question {
 interface Category {
   id: string
   name: string
-  description: string
+  cardNumber?: number
+  questions: Question[]
+  description?: string
 }
 
 interface Game {
@@ -53,7 +55,8 @@ export default function NestedGame({ gameId, initialGame }: NestedGameProps) {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
   const [showResult, setShowResult] = useState(false)
   const [answerResult, setAnswerResult] = useState<{ correct: boolean; explanation?: string } | null>(null)
-  const [answeredQuestions, setAnsweredQuestions] = useState<string[]>([])
+  const [answeredQuestions, setAnsweredQuestions] = useState<Set<string>>(new Set())
+  const [answeredQuestionsPerCategory, setAnsweredQuestionsPerCategory] = useState<Record<string, Set<string>>>({})
   const [gamePhase, setGamePhase] = useState<'category' | 'question' | 'roll'>('roll')
   const [selectedOptionKey, setSelectedOptionKey] = useState<string | null>(null)
 
@@ -90,14 +93,49 @@ export default function NestedGame({ gameId, initialGame }: NestedGameProps) {
 
   const handlePhysicalSelect=(n:number)=>proceedWithRoll(n)
 
-  const confirmRoll = () => {
-    if (diceRoll === null || diceRoll === 6) return
-    // Map 1-5 straight to index 0-4 regardless of cardNumber field
-    const idx = diceRoll - 1
-    const selectedCat = game.categories[idx]
-    if (selectedCat) {
-      selectCategory(selectedCat as any)
+  // Track answered questions per category
+  const markQuestionAsAnswered = (categoryId: string, questionId: string) => {
+    setAnsweredQuestions(prev => new Set(prev).add(questionId))
+    setAnsweredQuestionsPerCategory(prev => {
+      const categorySet = new Set(prev[categoryId] || [])
+      categorySet.add(questionId)
+      return { ...prev, [categoryId]: categorySet }
+    })
+  }
+
+  // Get unanswered questions for a category
+  const getUnansweredQuestions = (categoryId: string, questions: Question[]) => {
+    const answeredSet = answeredQuestionsPerCategory[categoryId] || new Set()
+    return questions.filter(q => !answeredSet.has(q.id))
+  }
+
+  const confirmRoll = async () => {
+    if (!diceRoll) return
+    
+    const selectedCategory = game.categories.find(c => (c as Category).cardNumber === diceRoll)
+    if (!selectedCategory) return
+
+    setCurrentCategory(selectedCategory)
+    
+    // Get unanswered questions for this category
+    const unansweredQuestions = getUnansweredQuestions(selectedCategory.id, (selectedCategory as Category).questions)
+    
+    // If all questions have been answered, reset the answered questions for this category
+    if (unansweredQuestions.length === 0) {
+      setAnsweredQuestionsPerCategory(prev => ({...prev, [selectedCategory.id]: new Set()}))
+      const randomQuestion = (selectedCategory as Category).questions[
+        Math.floor(Math.random() * (selectedCategory as Category).questions.length)
+      ]
+      setCurrentQuestion(randomQuestion)
+    } else {
+      // Pick a random unanswered question
+      const randomQuestion = unansweredQuestions[
+        Math.floor(Math.random() * unansweredQuestions.length)
+      ]
+      setCurrentQuestion(randomQuestion)
     }
+    
+    setGamePhase('question')
     setAwaitingConfirm(false)
   }
 
@@ -107,7 +145,8 @@ export default function NestedGame({ gameId, initialGame }: NestedGameProps) {
   }
 
   const handleReset=()=>{
-    setAnsweredQuestions([])
+    setAnsweredQuestions(new Set())
+    setAnsweredQuestionsPerCategory({})
     setGamePhase('roll')
     setDiceRoll(null)
     setCurrentQuestion(null)
@@ -124,7 +163,7 @@ export default function NestedGame({ gameId, initialGame }: NestedGameProps) {
   } = useCategoryQuestions(
     gameId, 
     currentCategory?.id || '', 
-    answeredQuestions
+    Array.from(answeredQuestions)
   )
 
   // Use React Query for answer submission
@@ -169,7 +208,7 @@ export default function NestedGame({ gameId, initialGame }: NestedGameProps) {
             correct: selectedOptionKey === currentQuestion.correctAnswer,
             explanation: result.explanation
           })
-          setAnsweredQuestions(prev => [...prev, currentQuestion.id])
+          markQuestionAsAnswered(currentCategory?.id || '', currentQuestion.id)
           setShowResult(true)
 
           setTimeout(() => {
@@ -201,12 +240,8 @@ export default function NestedGame({ gameId, initialGame }: NestedGameProps) {
     setAwaitingConfirm(false)
     setChooseCardModal(false)
     
-    // Force a small delay to ensure UI updates before allowing new roll
-    setTimeout(() => {
-      if (diceMode === 'digital') {
-        rollDice()
-      }
-    }, 100)
+    // Remove auto-roll on Next Turn
+    // Let user explicitly click Roll Dice button
   }
 
   const getOptionClass = (option: string) => {
