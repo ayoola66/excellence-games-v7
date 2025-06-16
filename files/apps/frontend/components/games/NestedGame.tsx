@@ -391,8 +391,8 @@ export default function NestedGame({ gameId, initialGame }: NestedGameProps) {
                 </div>
               </aside>
 
-              {/* Card grid (hidden during question phase) */}
-              {gamePhase==='roll' && (
+              {/* Card grid (always visible) */}
+              {(gamePhase === 'roll' || gamePhase === 'question') && (
                 <section className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-4 content-start">
                   {[1,2,3,4,5,6].map(n=>{
                     const category = game.categories.find(c=>(c as any).cardNumber===n) || game.categories[n-1]
