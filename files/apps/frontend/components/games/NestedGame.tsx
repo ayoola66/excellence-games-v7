@@ -294,7 +294,7 @@ export default function NestedGame({ gameId, initialGame }: NestedGameProps) {
           </div>
 
           {/* Dice + Question UI (mirrors StraightGame) */}
-          {gamePhase==='roll' && (
+          {gamePhase!=='category' && (
             <div className="flex flex-col md:flex-row gap-8 w-full max-w-6xl">
               {/* Left aside (dice + reset) */}
               <aside className="w-full md:w-1/3 flex flex-col items-center gap-6">
