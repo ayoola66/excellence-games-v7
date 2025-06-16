@@ -81,9 +81,6 @@ export default function NestedGame({ gameId, initialGame }: NestedGameProps) {
     setDiceRoll(roll)
     setCurrentQuestion(null)
     setAwaitingConfirm(true)
-    if(roll===6){
-      setChooseCardModal(true)
-    }
   }
 
   const rollDice = ()=>{
@@ -105,7 +102,6 @@ export default function NestedGame({ gameId, initialGame }: NestedGameProps) {
   }
 
   const handleSelectCard=(n:number)=>{
-    setChooseCardModal(false)
     setDiceRoll(n)
     confirmRoll()
   }
@@ -189,6 +185,7 @@ export default function NestedGame({ gameId, initialGame }: NestedGameProps) {
   }
 
   const nextQuestion = () => {
+    // Reset all states to prepare for new roll
     setSelectedAnswer(null)
     setSelectedOptionKey(null)
     setShowResult(false)
@@ -202,6 +199,14 @@ export default function NestedGame({ gameId, initialGame }: NestedGameProps) {
     setAnswerEvaluated(false)
     setAnswerCorrect(null)
     setAwaitingConfirm(false)
+    setChooseCardModal(false)
+    
+    // Force a small delay to ensure UI updates before allowing new roll
+    setTimeout(() => {
+      if (diceMode === 'digital') {
+        rollDice()
+      }
+    }, 100)
   }
 
   const getOptionClass = (option: string) => {
@@ -374,26 +379,27 @@ export default function NestedGame({ gameId, initialGame }: NestedGameProps) {
                     const category = game.categories.find(c=>(c as any).cardNumber===n) || game.categories[n-1]
                     const label = n===6 ? '★' : (category?.name || n)
                     const isActive = awaitingConfirm && diceRoll===n && n!==6
-                    const isDisabled = awaitingConfirm && diceRoll!==n && diceRoll!==6
+                    const isStarRollActive = diceRoll === 6 && n !== 6
+                    const isDisabled = awaitingConfirm && diceRoll!==n && diceRoll!==6 && !isStarRollActive
                     return (
-                      <div key={n} onClick={isActive?confirmRoll:undefined} className={clsx('h-28 sm:h-32 rounded-xl shadow flex items-center justify-center text-xl font-bold select-none cursor-pointer', isDisabled?'opacity-40':'bg-white hover:shadow-lg', isActive && 'ring-4 ring-purple-500')}>{label}</div>
+                      <div 
+                        key={n} 
+                        onClick={() => {
+                          if (isActive) confirmRoll();
+                          if (isStarRollActive) handleSelectCard(n);
+                        }}
+                        className={clsx(
+                          'h-28 sm:h-32 rounded-xl shadow flex items-center justify-center text-xl font-bold select-none cursor-pointer transition-all duration-300',
+                          isDisabled ? 'opacity-40 pointer-events-none' : 'hover:shadow-lg',
+                          isActive && 'bg-gradient-to-br from-blue-100 to-indigo-200 ring-4 ring-blue-500',
+                          isStarRollActive && 'bg-gradient-to-br from-blue-100 to-indigo-200 ring-4 ring-blue-500',
+                          n === 6 && 'bg-gradient-to-br from-yellow-100 to-amber-200',
+                          !isActive && !isStarRollActive && !isDisabled && 'bg-white'
+                        )}
+                      >{label}</div>
                     )
                   })}
                 </section>
-              )}
-
-              {/* Choose card modal for roll 6 */}
-              {chooseCardModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                  <div className="bg-white rounded-xl shadow-lg p-8 max-w-sm w-full text-center">
-                    <h2 className="text-xl font-bold mb-6">Pick a Card</h2>
-                    <div className="grid grid-cols-1 gap-3">
-                      {game.categories.slice(0,5).map((cat,idx)=> (
-                        <button key={cat.id} onClick={()=>handleSelectCard((cat as any).cardNumber || idx+1)} className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold">{cat.name}</button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
               )}
             </div>
           )}
