@@ -49,56 +49,7 @@ import {
   TruckIcon as TruckIconSolid
 } from '@heroicons/react/24/solid'
 import { toast } from 'react-hot-toast'
-
-interface Game {
-  id: string
-  name: string
-  description: string
-  type: 'straight' | 'nested'
-  status: 'free' | 'premium'
-  totalQuestions: number
-  categories?: {
-    id: string
-    attributes: {
-      name: string
-      description: string
-      questionCount: number
-      cardNumber?: number
-      status: string
-    }
-  }[]
-  createdAt: string
-  updatedAt: string
-  thumbnail?: {
-    data?: {
-      attributes: {
-        url: string
-        name: string
-      }
-    }
-  }
-  isActive: boolean
-  sortOrder: number
-}
-
-interface Question {
-  id: string
-  attributes: {
-    question: string
-    option1: string
-    option2: string
-    option3: string
-    option4: string
-    correctAnswer: 'option1' | 'option2' | 'option3' | 'option4'
-    explanation?: string
-    category?: any
-    game?: any
-    isActive?: boolean
-    timesAnswered?: number
-    timesCorrect?: number
-    sortOrder?: number
-  }
-}
+import { Game, Question, Category, AdminStats } from '@/types'
 
 interface Product {
   id: string
@@ -153,13 +104,6 @@ interface Order {
   premiumExpiresAt?: string
   createdAt: string
   updatedAt: string
-}
-
-interface AdminStats {
-  totalGames: number
-  totalQuestions: number
-  totalUsers: number
-  premiumUsers: number
 }
 
 export default function AdminDashboard() {
@@ -254,22 +198,55 @@ export default function AdminDashboard() {
       return
     }
 
-    fetchData()
-  }, [admin, router])
+    // Only fetch if we don't have data or if explicitly refreshing
+    if (!games.length || refreshingGames) {
+      fetchData()
+    }
+  }, [admin, router]) // Remove games from dependencies to prevent loops
 
   const fetchData = async () => {
     try {
-      const [gamesResponse, statsResponse] = await Promise.all([
+      const [gamesResponse, questionsResponse, statsResponse] = await Promise.all([
         strapiApi.getAdminGames(),
+        strapiApi.getAdminQuestions(),
         strapiApi.getAdminStats()
       ])
-      setGames(gamesResponse.data)
+
+      // Create a map of game IDs to question counts
+      const questionCountsByGame = questionsResponse.data.reduce((acc: {[key: string]: number}, question: any) => {
+        const gameId = question.attributes?.game?.data?.id
+        if (gameId) {
+          acc[gameId] = (acc[gameId] || 0) + 1
+        }
+        return acc
+      }, {})
+
+      // Map the games data directly from the raw response
+      const gamesWithQuestions = gamesResponse.data.map((game: any) => ({
+        id: game.id,
+        name: game.name,
+        description: game.description,
+        type: game.type || 'straight',
+        status: game.status || 'free',
+        isActive: game.isActive ?? true,
+        totalQuestions: questionCountsByGame[game.id] || 0,
+        createdAt: game.createdAt,
+        updatedAt: game.updatedAt,
+        sortOrder: game.sortOrder || 0,
+        thumbnail: game.thumbnail?.data?.attributes?.url || null
+      }))
+
+      setGames(gamesWithQuestions)
       setStats(statsResponse.data)
+      if (refreshingGames) {
+        toast.success('Games refreshed successfully')
+      }
     } catch (error) {
       console.error('Error fetching data:', error)
       toast.error('Failed to fetch data')
     } finally {
       setIsLoading(false)
+      setRefreshingGames(false)
     }
   }
 
@@ -283,27 +260,15 @@ export default function AdminDashboard() {
     // Question submission logic
   }
 
-  const handleDeleteGame = async (gameId: string) => {
-    setConfirmDialog({
-      isOpen: true,
-      title: 'Delete Game',
-      message: 'Are you sure you want to delete this game? This action cannot be undone.',
-      type: 'danger',
-      action: async () => {
-        try {
-          setConfirmDialog(prev => ({ ...prev, loading: true }))
-          await strapiApi.deleteGame(gameId)
-          setGames(games.filter(game => game.id !== gameId))
-          toast.success('Game deleted successfully')
-          setConfirmDialog(prev => ({ ...prev, isOpen: false }))
-        } catch (error) {
-          console.error('Error deleting game:', error)
-          toast.error('Failed to delete game')
-          setConfirmDialog(prev => ({ ...prev, loading: false }))
-        }
-      },
-      loading: false
-    })
+  const handleDeleteGame = async (id: string) => {
+    try {
+      await strapiApi.deleteGame(id)
+      toast.success('Game deleted successfully')
+      await fetchData() // Refresh data after deletion
+    } catch (error) {
+      console.error('Error deleting game:', error)
+      toast.error('Failed to delete game')
+    }
   }
 
   const handleDeleteQuestion = async (questionId: string) => {
@@ -349,17 +314,8 @@ export default function AdminDashboard() {
   const adminBadge = getAdminBadge()
 
   const refreshGames = async () => {
-    try {
-      setRefreshingGames(true)
-      const response = await strapiApi.getAdminGames()
-      setGames(response.data)
-      toast.success('Games refreshed successfully')
-    } catch (error) {
-      console.error('Error refreshing games:', error)
-      toast.error('Failed to refresh games')
-    } finally {
-      setRefreshingGames(false)
-    }
+    setRefreshingGames(true)
+    await fetchData()
   }
 
   const fetchProducts = async () => {
@@ -615,14 +571,12 @@ export default function AdminDashboard() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Questions</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categories</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {/* Only show the 5 most recently created games (flat structure from getAdminGames) */}
                 {(games
-                  .slice() // copy to avoid mutating state
+                  .slice()
                   .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                   .slice(0, 5)
                 ).map((game) => (
@@ -650,23 +604,6 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {game.totalQuestions}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-wrap gap-2">
-                        {game.categories?.map((category) => {
-                          const catName = category.name || category.attributes?.name || '';
-                          const catCardNumber = category.cardNumber ?? category.attributes?.cardNumber;
-                          return (
-                            <span
-                              key={category.id}
-                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                            >
-                              {catName}
-                              {catCardNumber ? ` (${catCardNumber})` : ''}
-                            </span>
-                          );
-                        })}
-                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button

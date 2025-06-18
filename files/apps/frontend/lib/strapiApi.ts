@@ -248,47 +248,35 @@ export const strapiApi = {
   async getAdminGames() {
     try {
       const response = await api.get('/api/games?populate=*')
-      console.log('Raw admin games response:', response.data)
-      
+
       if (!response.data?.data) {
-        console.warn('No admin games data in response')
+        console.warn('No games data in response')
         return { data: [] }
       }
 
-      return {
-        data: response.data.data.map((game: any) => {
-          // Extract thumbnail data
-          const thumbnail = game.attributes?.thumbnail?.data ? {
-            url: game.attributes.thumbnail.data.attributes?.url || '',
-            name: game.attributes.thumbnail.data.attributes?.name || ''
-          } : null;
+      // Map the response data to a flat structure
+      const mappedGames = response.data.data.map((game: any) => ({
+        id: game.id,
+        name: game.name,
+        description: game.description,
+        type: game.type || 'straight',
+        status: game.status || 'free',
+        isActive: game.isActive ?? true,
+        totalQuestions: game.totalQuestions || 0,
+        createdAt: game.createdAt,
+        updatedAt: game.updatedAt,
+        sortOrder: game.sortOrder || 0,
+        thumbnail: game.thumbnail?.data ? {
+          data: {
+            attributes: {
+              url: game.thumbnail.data.attributes?.url || '',
+              name: game.thumbnail.data.attributes?.name || ''
+            }
+          }
+        } : null
+      }))
 
-          // Extract categories data
-          const categories = game.attributes?.categories?.data?.map((cat: any) => ({
-            id: cat.id,
-            name: cat.attributes?.name || '',
-            description: cat.attributes?.description || '',
-            questionCount: cat.attributes?.questionCount || 0,
-            cardNumber: cat.attributes?.cardNumber,
-            status: cat.attributes?.status || 'active'
-          })) || [];
-
-          return {
-            id: game.id,
-            name: game.attributes?.name || '',
-            description: game.attributes?.description || '',
-            type: game.attributes?.type || 'straight',
-            status: game.attributes?.status || 'free',
-            totalQuestions: game.attributes?.totalQuestions || 0,
-            isActive: game.attributes?.isActive ?? true,
-            sortOrder: game.attributes?.sortOrder || 0,
-            thumbnail,
-            categories,
-            createdAt: game.attributes?.createdAt,
-            updatedAt: game.attributes?.updatedAt
-          };
-        })
-      }
+      return { data: mappedGames }
     } catch (error) {
       console.error('Error fetching admin games:', error)
       return { data: [] }
@@ -310,9 +298,19 @@ export const strapiApi = {
   },
 
   async getAdminUsers() {
-    const response = await api.get('/api/users')
-    return {
-      data: response.data
+    try {
+      const response = await api.get('/api/admin-user-profiles?populate=*')
+      return {
+        data: response.data.data.map((user: any) => ({
+          id: user.id,
+          ...user.attributes,
+          createdAt: user.attributes?.createdAt,
+          updatedAt: user.attributes?.updatedAt
+        }))
+      }
+    } catch (error) {
+      console.error('Error fetching admin users:', error)
+      return { data: [] }
     }
   },
 
