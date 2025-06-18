@@ -288,5 +288,262 @@ module.exports = createCoreController('plugin::users-permissions.user', ({ strap
     } catch (error) {
       return ctx.badRequest('Failed to upload music track');
     }
-  }
+  },
+
+  async findAll(ctx) {
+    try {
+      const { page = 1, pageSize = 20 } = ctx.query
+      const start = (page - 1) * pageSize
+
+      // Get total count for pagination
+      const total = await strapi.db.query('plugin::users-permissions.user').count()
+
+      // Get paginated users
+      const users = await strapi.entityService.findMany('plugin::users-permissions.user', {
+        fields: [
+          'id', 
+          'username', 
+          'email', 
+          'fullName', 
+          'blocked', 
+          'confirmed', 
+          'subscriptionStatus', 
+          'premiumExpiry', 
+          'createdAt',
+          'phone',
+          'address'
+        ],
+        populate: ['role'],
+        start,
+        limit: Math.min(pageSize, 100), // Cap at 100 users per page
+      })
+
+      // Process users to ensure subscription status is correct based on premiumExpiry
+      const processedUsers = users.map(user => {
+        const now = new Date()
+        const expiryDate = user.premiumExpiry ? new Date(user.premiumExpiry) : null
+        
+        // Calculate effective subscription status
+        const effectiveStatus = expiryDate && expiryDate > now ? 'premium' : 'free'
+        
+        // Log discrepancies for monitoring
+        if (user.subscriptionStatus !== effectiveStatus) {
+          console.log(`Subscription status mismatch for user ${user.id}: DB=${user.subscriptionStatus}, Calculated=${effectiveStatus}, Expiry=${user.premiumExpiry}`)
+        }
+
+        return {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          fullName: user.fullName,
+          phone: user.phone,
+          address: user.address,
+          blocked: user.blocked,
+          confirmed: user.confirmed,
+          // Use calculated status based on expiry date
+          subscriptionStatus: effectiveStatus,
+          premiumExpiry: user.premiumExpiry,
+          createdAt: user.createdAt
+        }
+      })
+
+      return {
+        data: processedUsers,
+        meta: {
+          page: parseInt(page),
+          pageSize: parseInt(pageSize),
+          pageCount: Math.ceil(total / pageSize),
+          total
+        }
+      }
+    } catch (error) {
+      ctx.throw(500, 'Failed to fetch users')
+    }
+  },
+
+  async findOne(ctx) {
+    try {
+      const { id } = ctx.params
+      const user = await strapi.entityService.findOne('plugin::users-permissions.user', id, {
+        fields: ['id', 'username', 'email', 'fullName', 'createdAt'],
+        populate: ['role']
+      })
+
+      if (!user) {
+        return ctx.notFound('User not found')
+      }
+
+      return {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role?.name || 'User',
+        status: user.blocked ? 'inactive' : 'active',
+        subscription: user.subscription || 'free',
+        createdAt: user.createdAt
+      }
+    } catch (error) {
+      ctx.throw(500, 'Failed to fetch user')
+    }
+  },
+
+  async create(ctx) {
+    try {
+      const { username, email, password, fullName, role, status, subscription } = ctx.request.body
+
+      if (!username || !email || !password || !fullName) {
+        return ctx.badRequest('Missing required fields')
+      }
+
+      // Get the default role
+      const roleEntity = await strapi.db.query('plugin::users-permissions.role').findOne({
+        where: { type: role?.toLowerCase() || 'authenticated' }
+      })
+
+      if (!roleEntity) {
+        return ctx.badRequest('Invalid role')
+      }
+
+      const user = await strapi.entityService.create('plugin::users-permissions.user', {
+        data: {
+          username,
+          email,
+          password,
+          fullName,
+          role: roleEntity.id,
+          blocked: status === 'inactive',
+          subscription: subscription || 'free',
+          provider: 'local',
+          confirmed: true
+        }
+      })
+
+      return {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        fullName: user.fullName,
+        role: roleEntity.name,
+        status: user.blocked ? 'inactive' : 'active',
+        subscription: user.subscription,
+        createdAt: user.createdAt
+      }
+    } catch (error) {
+      ctx.throw(500, 'Failed to create user')
+    }
+  },
+
+  async update(ctx) {
+    try {
+      const { id } = ctx.params
+      const { 
+        fullName, 
+        email, 
+        role, 
+        status, 
+        subscription, 
+        subscriptionStatus, 
+        premiumExpiry,
+        phone,
+        address,
+        blocked
+      } = ctx.request.body
+
+      let roleEntity
+      if (role) {
+        roleEntity = await strapi.db.query('plugin::users-permissions.role').findOne({
+          where: { type: role.toLowerCase() }
+        })
+        if (!roleEntity) {
+          return ctx.badRequest('Invalid role')
+        }
+      }
+
+      // Determine subscription status based on premiumExpiry if provided
+      let effectiveSubscriptionStatus = subscriptionStatus || subscription
+      let effectivePremiumExpiry = premiumExpiry
+
+      // If setting to premium but no expiry provided, set default expiry (1 year)
+      if (effectiveSubscriptionStatus === 'premium' && !effectivePremiumExpiry) {
+        const oneYearFromNow = new Date()
+        oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1)
+        effectivePremiumExpiry = oneYearFromNow.toISOString()
+      }
+
+      // If setting to free, clear expiry date
+      if (effectiveSubscriptionStatus === 'free') {
+        effectivePremiumExpiry = null
+      }
+
+      // If expiry date is provided but expired, set status to free
+      if (effectivePremiumExpiry) {
+        const expiryDate = new Date(effectivePremiumExpiry)
+        const now = new Date()
+        if (expiryDate <= now) {
+          effectiveSubscriptionStatus = 'free'
+          effectivePremiumExpiry = null
+        }
+      }
+
+      const updateData = {
+        fullName,
+        email,
+        phone,
+        address,
+        ...(roleEntity && { role: roleEntity.id }),
+        ...(status && { blocked: status === 'inactive' }),
+        ...(blocked !== undefined && { blocked }),
+        ...(effectiveSubscriptionStatus && { subscriptionStatus: effectiveSubscriptionStatus }),
+        premiumExpiry: effectivePremiumExpiry
+      }
+
+      const user = await strapi.entityService.update('plugin::users-permissions.user', id, {
+        data: updateData
+      })
+
+      return {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        fullName: user.fullName,
+        phone: user.phone,
+        address: user.address,
+        role: roleEntity?.name || user.role?.name || 'User',
+        status: user.blocked ? 'inactive' : 'active',
+        subscriptionStatus: user.subscriptionStatus || 'free',
+        premiumExpiry: user.premiumExpiry,
+        blocked: user.blocked,
+        createdAt: user.createdAt
+      }
+    } catch (error) {
+      ctx.throw(500, 'Failed to update user')
+    }
+  },
+
+  async delete(ctx) {
+    try {
+      const { id } = ctx.params
+      await strapi.entityService.delete('plugin::users-permissions.user', id)
+      return { success: true }
+    } catch (error) {
+      ctx.throw(500, 'Failed to delete user')
+    }
+  },
+
+  async syncSubscriptionStatuses(ctx) {
+    try {
+      // Run the subscription status update script
+      const script = require('../../../../scripts/update-subscription-statuses');
+      await script.run({ strapi });
+      
+      return {
+        success: true,
+        message: 'Subscription statuses synchronized successfully'
+      };
+    } catch (error) {
+      console.error('Failed to synchronize subscription statuses:', error);
+      return ctx.badRequest('Failed to synchronize subscription statuses');
+    }
+  },
 })) 

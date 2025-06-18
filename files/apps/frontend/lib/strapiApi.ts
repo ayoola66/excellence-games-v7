@@ -522,5 +522,64 @@ export const strapiApi = {
       console.error('Error updating question:', error)
       throw error
     }
+  },
+
+  async updateUser(id: number, userData: {
+    username?: string;
+    email?: string;
+    profile?: {
+      fullName?: string;
+    };
+    subscriptionType?: 'free' | 'premium';
+    subscriptionStatus?: 'free' | 'premium';
+    isActive?: boolean;
+    premiumExpiry?: string | null;
+    phone?: string;
+    address?: string;
+    blocked?: boolean;
+  }): Promise<User> {
+    const response = await api.put(`/api/users/${id}`, {
+      username: userData.username,
+      email: userData.email,
+      profile: userData.profile,
+      subscriptionType: userData.subscriptionType,
+      subscriptionStatus: userData.subscriptionStatus,
+      isActive: userData.isActive,
+      premiumExpiry: userData.premiumExpiry,
+      phone: userData.phone,
+      address: userData.address,
+      blocked: userData.blocked
+    })
+    return response.data
+  },
+
+  async get(endpoint: string) {
+    try {
+      const response = await api.get(endpoint)
+      return response
+    } catch (error) {
+      console.error(`Error fetching from ${endpoint}:`, error)
+      throw error
+    }
+  },
+
+  async delete(endpoint: string) {
+    try {
+      const response = await api.delete(endpoint)
+      return response
+    } catch (error) {
+      console.error(`Error deleting from ${endpoint}:`, error)
+      throw error
+    }
+  },
+
+  async post(endpoint: string, data?: any) {
+    try {
+      const response = await api.post(endpoint, data)
+      return response
+    } catch (error) {
+      console.error(`Error posting to ${endpoint}:`, error)
+      throw error
+    }
   }
 }
