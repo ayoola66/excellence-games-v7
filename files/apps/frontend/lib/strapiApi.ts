@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { User, UserPreferences, BillingInfo, AuthResponse } from '@/types'
+import { withRetry } from '@/utils/apiRetry'
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337',
@@ -237,20 +238,36 @@ export const strapiApi = {
         uploadFormData.append('field', 'thumbnail');
         
         try {
-          const uploadResponse = await api.post('/api/upload', uploadFormData, {
-            headers: {
-              'Content-Type': 'multipart/form-data'
+          // Use retry mechanism for upload
+          const uploadResponse = await withRetry(
+            async () => {
+              const response = await api.post('/api/upload', uploadFormData, {
+                headers: {
+                  'Content-Type': 'multipart/form-data'
+                }
+              });
+              
+              // Verify the upload was successful
+              if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
+                throw new Error('Upload response format is unexpected');
+              }
+              
+              return response;
+            },
+            {
+              maxRetries: 3,
+              baseDelay: 1000,
+              isRetryable: (error) => {
+                // Retry on network errors or 5xx server errors
+                if (!error.response) return true;
+                return error.response.status >= 500 && error.response.status < 600;
+              }
             }
-          });
+          );
           
-          console.log('Thumbnail upload response:', uploadResponse.data);
-          
-          // Verify the upload was successful
-          if (!uploadResponse.data || !Array.isArray(uploadResponse.data) || uploadResponse.data.length === 0) {
-            console.error('Upload response format is unexpected:', uploadResponse.data);
-          }
+          console.log('Thumbnail upload response (after retries if needed):', uploadResponse.data);
         } catch (uploadError) {
-          console.error('Error uploading thumbnail:', uploadError);
+          console.error('Error uploading thumbnail after retries:', uploadError);
           // Continue despite upload error - the game was created
         }
       }
@@ -297,20 +314,36 @@ export const strapiApi = {
         uploadFormData.append('field', 'thumbnail');
         
         try {
-          const uploadResponse = await api.post('/api/upload', uploadFormData, {
-            headers: {
-              'Content-Type': 'multipart/form-data'
+          // Use retry mechanism for upload
+          const uploadResponse = await withRetry(
+            async () => {
+              const response = await api.post('/api/upload', uploadFormData, {
+                headers: {
+                  'Content-Type': 'multipart/form-data'
+                }
+              });
+              
+              // Verify the upload was successful
+              if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
+                throw new Error('Upload response format is unexpected');
+              }
+              
+              return response;
+            },
+            {
+              maxRetries: 3,
+              baseDelay: 1000,
+              isRetryable: (error) => {
+                // Retry on network errors or 5xx server errors
+                if (!error.response) return true;
+                return error.response.status >= 500 && error.response.status < 600;
+              }
             }
-          });
+          );
           
-          console.log('Thumbnail upload response:', uploadResponse.data);
-          
-          // Verify the upload was successful
-          if (!uploadResponse.data || !Array.isArray(uploadResponse.data) || uploadResponse.data.length === 0) {
-            console.error('Upload response format is unexpected:', uploadResponse.data);
-          }
+          console.log('Thumbnail upload response (after retries if needed):', uploadResponse.data);
         } catch (uploadError) {
-          console.error('Error uploading thumbnail:', uploadError);
+          console.error('Error uploading thumbnail after retries:', uploadError);
           // Continue despite upload error - the game was updated
         }
       }

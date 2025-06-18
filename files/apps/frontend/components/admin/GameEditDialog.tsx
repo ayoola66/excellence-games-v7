@@ -69,28 +69,42 @@ export default function GameEditDialog({ isOpen, onClose, game, onSave }: GameEd
     }
   }, [isOpen, game])
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      // Validate file size (2MB limit)
-      if (file.size > 2 * 1024 * 1024) {
-        setError('Image must be less than 2MB')
-        return
+      try {
+        setIsLoading(true);
+        
+        // Import validateFile dynamically to avoid SSR issues
+        const { validateFile } = await import('@/utils/fileStorage');
+        
+        // Comprehensive validation
+        const validation = await validateFile(file, {
+          maxSizeBytes: 2 * 1024 * 1024, // 2MB
+          allowedTypes: ['image/jpeg', 'image/png', 'image/jpg'],
+          validateImageContent: true
+        });
+        
+        if (!validation.valid) {
+          setError(validation.error || 'Invalid file');
+          setIsLoading(false);
+          return;
+        }
+        
+        // File is valid, set thumbnail and preview
+        setThumbnail(file);
+        const previewUrl = URL.createObjectURL(file);
+        setThumbnailPreview(previewUrl);
+        setError(null);
+        
+        // Log successful validation
+        console.log('Image validated successfully:', file.name, file.type, file.size);
+      } catch (err) {
+        console.error('Error validating image:', err);
+        setError('Error validating image. Please try another file.');
+      } finally {
+        setIsLoading(false);
       }
-      
-      // Validate file type
-      if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
-        setError('Only JPG, JPEG, and PNG files are allowed')
-        return
-      }
-      
-      setThumbnail(file)
-      const previewUrl = URL.createObjectURL(file)
-      setThumbnailPreview(previewUrl)
-      setError(null)
-      
-      // Clean up the URL when component unmounts
-      return () => URL.revokeObjectURL(previewUrl)
     }
   }
 

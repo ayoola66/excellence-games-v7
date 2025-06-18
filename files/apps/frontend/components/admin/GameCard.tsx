@@ -1,8 +1,9 @@
 'use client'
 
 import Image from 'next/image'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PencilIcon, TrashIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline'
+import { getCachedImage, cacheImage, preloadImage } from '@/utils/imageCache'
 
 interface Game {
   id: string
@@ -25,6 +26,8 @@ interface GameCardProps {
 
 export default function GameCard({ game, onEdit, onDelete, onManageQuestions }: GameCardProps) {
   const [isHovered, setIsHovered] = useState(false)
+  const [imageUrl, setImageUrl] = useState<string | null>(game.thumbnail || null)
+  const [imageError, setImageError] = useState(false)
   
   // Format date to be more readable
   const formattedDate = new Date(game.updatedAt).toLocaleDateString('en-GB', {
@@ -32,6 +35,28 @@ export default function GameCard({ game, onEdit, onDelete, onManageQuestions }: 
     month: 'short',
     year: 'numeric'
   })
+  
+  // Handle image caching
+  useEffect(() => {
+    const cacheKey = `game-${game.id}-thumbnail`;
+    
+    // Check if image is in cache
+    const cachedUrl = getCachedImage(cacheKey);
+    
+    if (cachedUrl) {
+      // Use cached URL
+      setImageUrl(cachedUrl);
+    } else if (game.thumbnail) {
+      // Cache the new URL
+      cacheImage(cacheKey, game.thumbnail);
+      setImageUrl(game.thumbnail);
+      
+      // Preload the image
+      preloadImage(game.thumbnail).catch(() => {
+        console.warn(`Failed to preload image for game ${game.id}`);
+      });
+    }
+  }, [game.id, game.thumbnail])
 
   return (
     <div
@@ -40,20 +65,25 @@ export default function GameCard({ game, onEdit, onDelete, onManageQuestions }: 
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="relative aspect-video">
-        {game.thumbnail ? (
+        {imageUrl && !imageError ? (
           <Image
-            src={game.thumbnail}
+            src={imageUrl}
             alt={game.name}
             fill
             className="object-cover"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             onError={(e) => {
               console.error('Error loading thumbnail for game:', game.id, game.name);
-              // Replace with fallback on error
-              e.currentTarget.style.display = 'none';
-              // Force a re-render to show the fallback
-              setIsHovered(isHovered);
+              setImageError(true);
+              // Invalidate cache if image fails to load
+              if (game.id) {
+                const cacheKey = `game-${game.id}-thumbnail`;
+                import('@/utils/imageCache').then(({ invalidateCache }) => {
+                  invalidateCache(cacheKey);
+                });
+              }
             }}
+            priority={true} // Prioritize loading this image
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-blue-100 to-indigo-100">
