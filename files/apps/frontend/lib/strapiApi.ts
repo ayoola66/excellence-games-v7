@@ -205,23 +205,124 @@ export const strapiApi = {
   },
 
   // Admin Game Management
-  async createGame(data: any) {
+  async createGame(formData: FormData) {
     try {
-      const response = await api.post('/api/games', data)
-      return response.data
+      // Extract regular fields from FormData
+      const gameData: any = {};
+      // Use forEach instead of for...of to avoid downlevelIteration issues
+      formData.forEach((value, key) => {
+        // Skip file fields
+        if (key !== 'thumbnail') {
+          gameData[key] = value;
+        }
+      });
+      
+      // Debug log for form data
+      console.log('Creating game with data:', gameData);
+      
+      // Create the game first
+      const response = await api.post('/api/games', { data: gameData });
+      const gameId = response.data.data.id;
+      console.log('Game created with ID:', gameId);
+      
+      // If there's a thumbnail file, upload it
+      const thumbnail = formData.get('thumbnail') as File;
+      if (thumbnail) {
+        console.log('Uploading thumbnail:', thumbnail.name, thumbnail.type, thumbnail.size);
+        
+        const uploadFormData = new FormData();
+        uploadFormData.append('files', thumbnail);
+        uploadFormData.append('ref', 'api::game.game');
+        uploadFormData.append('refId', gameId);
+        uploadFormData.append('field', 'thumbnail');
+        
+        try {
+          const uploadResponse = await api.post('/api/upload', uploadFormData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+          
+          console.log('Thumbnail upload response:', uploadResponse.data);
+          
+          // Verify the upload was successful
+          if (!uploadResponse.data || !Array.isArray(uploadResponse.data) || uploadResponse.data.length === 0) {
+            console.error('Upload response format is unexpected:', uploadResponse.data);
+          }
+        } catch (uploadError) {
+          console.error('Error uploading thumbnail:', uploadError);
+          // Continue despite upload error - the game was created
+        }
+      }
+      
+      // Fetch the updated game to ensure we have the latest data including thumbnail
+      const updatedGameResponse = await api.get(`/api/games/${gameId}?populate=*`);
+      console.log('Updated game data:', updatedGameResponse.data);
+      
+      return updatedGameResponse.data;
     } catch (error) {
-      console.error('Error creating game:', error)
-      throw error
+      console.error('Error creating game:', error);
+      throw error;
     }
   },
 
-  async updateGame(id: string, data: any) {
+  async updateGame(id: string, formData: FormData) {
     try {
-      const response = await api.put(`/api/games/${id}`, data)
-      return response.data
+      // Extract regular fields from FormData
+      const gameData: any = {};
+      // Use forEach instead of for...of to avoid downlevelIteration issues
+      formData.forEach((value, key) => {
+        // Skip file fields
+        if (key !== 'thumbnail') {
+          gameData[key] = value;
+        }
+      });
+      
+      // Debug log for form data
+      console.log('Updating game with ID:', id, 'Data:', gameData);
+      
+      // Update the game data
+      const response = await api.put(`/api/games/${id}`, { data: gameData });
+      console.log('Game update response:', response.data);
+      
+      // If there's a thumbnail file, upload it
+      const thumbnail = formData.get('thumbnail') as File;
+      if (thumbnail) {
+        console.log('Uploading new thumbnail:', thumbnail.name, thumbnail.type, thumbnail.size);
+        
+        const uploadFormData = new FormData();
+        uploadFormData.append('files', thumbnail);
+        uploadFormData.append('ref', 'api::game.game');
+        uploadFormData.append('refId', id);
+        uploadFormData.append('field', 'thumbnail');
+        
+        try {
+          const uploadResponse = await api.post('/api/upload', uploadFormData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+          
+          console.log('Thumbnail upload response:', uploadResponse.data);
+          
+          // Verify the upload was successful
+          if (!uploadResponse.data || !Array.isArray(uploadResponse.data) || uploadResponse.data.length === 0) {
+            console.error('Upload response format is unexpected:', uploadResponse.data);
+          }
+        } catch (uploadError) {
+          console.error('Error uploading thumbnail:', uploadError);
+          // Continue despite upload error - the game was updated
+        }
+      }
+      
+      // Fetch the updated game to ensure we have the latest data including thumbnail
+      const updatedGameResponse = await api.get(`/api/games/${id}?populate=*`);
+      console.log('Updated game data with thumbnail:', updatedGameResponse.data);
+      
+      return updatedGameResponse.data;
     } catch (error) {
-      console.error('Error updating game:', error)
-      throw error
+      console.error('Error updating game:', error);
+      throw error;
     }
   },
 
@@ -247,36 +348,56 @@ export const strapiApi = {
 
   async getAdminGames() {
     try {
-      const response = await api.get('/api/games?populate=*')
+      console.log('Fetching admin games with populate=*');
+      const response = await api.get('/api/games?populate=*');
+      console.log('Raw games response:', response.data);
 
       if (!response.data?.data) {
-        console.warn('No games data in response')
-        return { data: [] }
+        console.warn('No games data in response');
+        return { data: [] };
       }
 
-      // Map the response data to a flat structure
-      const mappedGames = response.data.data.map((game: any) => ({
-        id: game.id,
-        name: game.name,
-        description: game.description,
-        type: game.type || 'straight',
-        status: game.status || 'free',
-        isActive: game.isActive ?? true,
-        totalQuestions: game.totalQuestions || 0,
-        createdAt: game.createdAt,
-        updatedAt: game.updatedAt,
-        sortOrder: game.sortOrder || 0,
-        thumbnail: game.thumbnail?.data ? {
-          data: {
-            attributes: {
-              url: game.thumbnail.data.attributes?.url || '',
-              name: game.thumbnail.data.attributes?.name || ''
-            }
-          }
-        } : null
-      }))
+      // Map the response data to a flat structure with improved thumbnail handling
+      const mappedGames = response.data.data.map((game: any) => {
+        // Extract the thumbnail URL directly
+        let thumbnailUrl = null;
+        
+        if (game.attributes?.thumbnail?.data?.attributes?.url) {
+          // Handle full Strapi v4 response format
+          thumbnailUrl = game.attributes.thumbnail.data.attributes.url;
+        } else if (game.thumbnail?.data?.attributes?.url) {
+          // Handle direct access format
+          thumbnailUrl = game.thumbnail.data.attributes.url;
+        } else if (typeof game.thumbnail === 'string') {
+          // Handle direct URL string
+          thumbnailUrl = game.thumbnail;
+        }
+        
+        // Ensure URL is absolute
+        if (thumbnailUrl && !thumbnailUrl.startsWith('http') && !thumbnailUrl.startsWith('/')) {
+          thumbnailUrl = `${process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337'}${thumbnailUrl}`;
+        }
+        
+        console.log(`Game ${game.id} (${game.name || game.attributes?.name}) thumbnail:`, thumbnailUrl);
+        
+        return {
+          id: game.id,
+          name: game.attributes?.name || game.name || '',
+          description: game.attributes?.description || game.description || '',
+          type: game.attributes?.type || game.type || 'straight',
+          status: game.attributes?.status || game.status || 'free',
+          isActive: game.attributes?.isActive ?? game.isActive ?? true,
+          totalQuestions: game.attributes?.totalQuestions || game.totalQuestions || 0,
+          createdAt: game.attributes?.createdAt || game.createdAt || '',
+          updatedAt: game.attributes?.updatedAt || game.updatedAt || '',
+          sortOrder: game.attributes?.sortOrder || game.sortOrder || 0,
+          // Store the direct URL string for easier access
+          thumbnail: thumbnailUrl
+        };
+      });
 
-      return { data: mappedGames }
+      console.log('Mapped games with thumbnails:', mappedGames);
+      return { data: mappedGames };
     } catch (error) {
       console.error('Error fetching admin games:', error)
       return { data: [] }

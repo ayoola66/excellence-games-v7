@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { strapiApi } from '@/lib/strapiApi'
 import { User } from '@/types'
 import compatToast from '@/lib/notificationManager'
@@ -22,6 +22,9 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [users, setUsers] = useState<User[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
+  // Add a ref to track if the component is mounted and prevent duplicate fetches
+  const isMounted = useRef(false)
+  const fetchInProgress = useRef(false)
 
   // Process user data to ensure subscription status is correct based on premiumExpiry
   const processUserData = useCallback((userData: any[]): User[] => {
@@ -59,13 +62,26 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Fetch user data function - single source of truth
   const fetchUserData = useCallback(async () => {
+    // Prevent concurrent fetches
+    if (fetchInProgress.current) {
+      console.log('Fetch already in progress, skipping duplicate request');
+      return;
+    }
+    
     try {
+      fetchInProgress.current = true;
       setIsLoading(true)
       setError(null)
       
+      console.log('Fetching user data...');
       // Single API call
       const response = await strapiApi.get('/api/users')
-      console.log('Raw API response:', response.data)
+      
+      // Check if component is still mounted before updating state
+      if (!isMounted.current) {
+        console.log('Component unmounted during fetch, aborting state update');
+        return;
+      }
       
       if (!response.data || !Array.isArray(response.data)) {
         throw new Error('Invalid response format')
@@ -73,15 +89,19 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       // Process data with validation and subscription status calculation
       const processedData = processUserData(response.data)
-      console.log('Processed user data:', processedData)
       
       setUsers(processedData)
     } catch (error) {
       console.error('Error fetching user data:', error)
-      setError('Failed to load users. Please try again.')
-      compatToast.error('Failed to load users')
+      if (isMounted.current) {
+        setError('Failed to load users. Please try again.')
+        compatToast.error('Failed to load users')
+      }
     } finally {
-      setIsLoading(false)
+      fetchInProgress.current = false;
+      if (isMounted.current) {
+        setIsLoading(false)
+      }
     }
   }, [processUserData])
 
@@ -130,8 +150,18 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Fetch data on component mount
   useEffect(() => {
-    fetchUserData()
-  }, [fetchUserData])
+    isMounted.current = true;
+    
+    // Only fetch on first mount
+    if (!users.length) {
+      fetchUserData();
+    }
+    
+    // Cleanup function
+    return () => {
+      isMounted.current = false;
+    };
+  }, [fetchUserData, users.length])
 
   // Create a stable context value
   const contextValue = useMemo(() => ({
