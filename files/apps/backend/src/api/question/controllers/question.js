@@ -175,15 +175,32 @@ module.exports = createCoreController('api::question.question', ({ strapi }) => 
     const { files, fields } = ctx.request;
     const gameId = fields?.gameId || ctx.request.body?.gameId;
     const categoryId = fields?.categoryId || ctx.request.body?.categoryId;
+    
     // Add robust error handling for missing gameId
     if (!gameId) {
       return ctx.badRequest('gameId is required for CSV import');
     }
-    if (!files || !files.csvFile) return ctx.badRequest('csvFile required');
+    
+    if (!files || !files.csvFile) {
+      return ctx.badRequest('csvFile required');
+    }
+    
+    // Get the game to verify it's a straight/linear game
+    const game = await strapi.entityService.findOne('api::game.game', gameId);
+    
+    if (!game) {
+      return ctx.notFound('Game not found');
+    }
+    
+    if (game.type !== 'linear') {
+      return ctx.badRequest('CSV import is only supported for linear/straight games. For nested games, use XLSX import.');
+    }
+    
     const csvFile = files.csvFile;
     const { parse } = require('fast-csv');
     const fs = require('fs');
     const questions = [];
+    
     await new Promise((resolve, reject) => {
       fs.createReadStream(csvFile.path)
         .pipe(parse({ headers: true, ignoreEmpty: true }))
@@ -191,15 +208,20 @@ module.exports = createCoreController('api::question.question', ({ strapi }) => 
         .on('data', row => questions.push(row))
         .on('end', resolve);
     });
-    ctx.request.body = { gameId, questions: questions.map(r=>({
-      question: r.Text || r.Question || r.question,
-      option1: r.Option1 || r.A || r.option1,
-      option2: r.Option2 || r.B || r.option2,
-      option3: r.Option3 || r.C || r.option3,
-      option4: r.Option4 || r.D || r.option4,
-      correctAnswer: (r.CorrectOption || r.correctAnswer || 'option1').toLowerCase(),
-      category: categoryId,
-    }))};
+    
+    ctx.request.body = { 
+      gameId, 
+      questions: questions.map(r => ({
+        question: r.Text || r.Question || r.question,
+        option1: r.Option1 || r.A || r.option1,
+        option2: r.Option2 || r.B || r.option2,
+        option3: r.Option3 || r.C || r.option3,
+        option4: r.Option4 || r.D || r.option4,
+        correctAnswer: (r.CorrectOption || r.correctAnswer || 'option1').toLowerCase(),
+        category: categoryId,
+      }))
+    };
+    
     await this.bulkImport(ctx);
 
     // After import, update the parent game's total question count
@@ -241,7 +263,7 @@ module.exports = createCoreController('api::question.question', ({ strapi }) => 
       }
 
       if (game.type !== 'nested') {
-        return ctx.badRequest('XLSX import is only supported for nested games');
+        return ctx.badRequest('XLSX import is only supported for nested games. For linear/straight games, use CSV import.');
       }
 
       const XLSX = require('xlsx');
