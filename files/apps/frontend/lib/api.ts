@@ -4,63 +4,59 @@
 import axios from 'axios';
 import { mockUsers, mockAdmins } from './mock-credentials'
 
-// Always use the local Strapi server in development
-const API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
+// Use the environment variable for API URL
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337/api';
 
-// Create axios instance with base URL and default headers
-const axiosInstance = axios.create({
-  baseURL: API_URL,
+// Create an axios instance with default config
+export const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337',
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
-  withCredentials: true
+});
+
+// Add request interceptor to handle auth token
+api.interceptors.request.use((config) => {
+  // Only try to get cookies in browser environment
+  if (typeof window !== 'undefined') {
+    const cookies = document.cookie.split(';')
+    const adminToken = cookies.find(cookie => cookie.trim().startsWith('adminToken='))
+    const userToken = cookies.find(cookie => cookie.trim().startsWith('clientUserToken='))
+
+    if (adminToken) {
+      const token = adminToken.split('=')[1]
+      config.headers.Authorization = `Bearer ${token}`
+    } else if (userToken) {
+      const token = userToken.split('=')[1]
+      config.headers.Authorization = `Bearer ${token}`
+    }
+  }
+
+  return config
 })
 
-// Request interceptor
-axiosInstance.interceptors.request.use(
-  (config) => {
-    // Get token from cookies instead of localStorage
+// Add response interceptor to handle errors
+api.interceptors.response.use(
+  response => response,
+  error => {
+    // Only try to handle cookies in browser environment
     if (typeof window !== 'undefined') {
-      const cookies = document.cookie.split(';')
-      // Prefer the client-readable token; fall back to the http-only one if present
-      const clientToken = cookies.find(cookie => cookie.trim().startsWith('clientUserToken='))
-      const userToken = cookies.find(cookie => cookie.trim().startsWith('userToken='))
-      const adminToken = cookies.find(cookie => cookie.trim().startsWith('adminToken='))
-      
-      if (config.url?.includes('/admin-user-profiles') && adminToken) {
-        config.headers.Authorization = `Bearer ${adminToken.split('=')[1]}`
-      } else if (clientToken) {
-        config.headers.Authorization = `Bearer ${clientToken.split('=')[1]}`
-      } else if (userToken) {
-        // This will usually be undefined on the client as it is httpOnly, but keep as fallback
-        config.headers.Authorization = `Bearer ${userToken.split('=')[1]}`
+      // Only clear tokens if the error is specifically about invalid/expired token
+      if (error.response?.status === 401 && 
+          (error.response?.data?.error === 'Invalid token' || 
+           error.response?.data?.error === 'Token expired' ||
+           error.response?.data?.error === 'Not authenticated')) {
+        // Clear tokens on unauthorized
+        document.cookie = 'adminToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+        document.cookie = 'clientUserToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+        
+        // Redirect to login
+        window.location.href = '/admin/login'
       }
-    }
-    return config
-  },
-  (error) => Promise.reject(error)
-)
-
-// Response interceptor to handle common errors
-axiosInstance.interceptors.response.use(
-  (response) => {
-    // Log response for debugging
-    console.log('API Response:', response.data)
-    return response
-  },
-  (error) => {
-    console.error('API Error:', error.response?.data || error.message)
-    if (error.response?.status === 401) {
-      // Handle unauthorized error
-      console.error('Unauthorized access')
     }
     return Promise.reject(error)
   }
 )
-
-// Export the axios instance for direct use
-export const api = axiosInstance
 
 // Mock data for demonstration
 const mockGames = [
@@ -425,216 +421,196 @@ const mockQuestions = [
   }
 ]
 
-// Export API functions
+// API client with typed methods
 export const strapiApi = {
   // Auth endpoints
   async login(email: string, password: string) {
-    try {
-      const response = await api.post('/api/auth/local', {
-        identifier: email,
-        password,
-      });
-      return response.data;
-    } catch (error: any) {
-      console.error('Login error:', error.response?.data || error);
-      throw error;
-    }
+    const response = await api.post('/auth/local', {
+      identifier: email,
+      password,
+    })
+    return response.data
   },
 
-  async register(email: string, password: string, fullName: string) {
-    try {
-      const response = await api.post('/api/auth/local/register', {
-        username: email.split('@')[0],
-        email,
-        password,
-        fullName,
-      });
-      return response.data;
-    } catch (error: any) {
-      console.error('Registration error:', error.response?.data || error);
-      throw error;
-    }
+  async register(email: string, password: string, username: string) {
+    const response = await api.post('/auth/local/register', {
+      email,
+      password,
+      username,
+    })
+    return response.data
   },
 
+  // Admin endpoints
   async adminLogin(email: string, password: string) {
-    try {
-      const response = await api.post('/admin-user-profiles/login', {
-        email,
-        password,
-      });
-
-      if (response.data?.data?.token) {
-        localStorage.setItem('adminToken', response.data.data.token);
-      }
-
-      return response.data.data;
-    } catch (error: any) {
-      console.error('Admin login error:', error.response?.data || error);
-      throw error;
-    }
+    const response = await api.post('/admin-user-profiles/login', {
+      email,
+      password,
+    })
+    return response.data
   },
 
-  async verifyAdminSession() {
-    try {
-      const response = await api.post('/admin-user-profiles/verify-session');
-      return response.data?.data;
-    } catch (error: any) {
-      console.error('Session verification error:', error.response?.data || error);
-      throw error;
-    }
+  async verifyAdminSession(token: string) {
+    const response = await api.post('/admin-user-profiles/verify-session', {
+      token,
+    })
+    return response.data
   },
 
   // Game endpoints
   async getGames() {
-    try {
-      const response = await api.get('/api/games?populate=categories')
-      return response.data
-    } catch (error) {
-      console.error('Error fetching games:', error)
-      throw error
-    }
-  },
-
-  async getGameStats() {
-    try {
-      const [gamesCount, questionsCount, usersCount, premiumUsersCount] = await Promise.all([
-        api.get('/api/games/count'),
-        api.get('/api/questions/count'),
-        api.get('/api/users/count'),
-        api.get('/api/users/count?subscriptionStatus=premium')
-      ])
-
-      return {
-        totalGames: gamesCount.data,
-        totalQuestions: questionsCount.data,
-        totalUsers: usersCount.data,
-        premiumUsers: premiumUsersCount.data
-      }
-    } catch (error) {
-      console.error('Error fetching game stats:', error)
-      throw error
-    }
+    const response = await api.get('/games?populate=categories')
+    return response.data
   },
 
   async getGame(id: string) {
-    try {
-      const response = await api.get(`/api/games/${id}?populate=*`)
-      return response.data
-    } catch (error) {
-      console.error('Error fetching game:', error)
-      throw error
-    }
-  },
-
-  async getGameCategories(gameId: string) {
-    const response = await api.get(`/api/games/${gameId}/categories?populate=*`)
+    const response = await api.get(`/games/${id}?populate=*`)
     return response.data
   },
 
-  async getGameQuestions(gameId: string, categoryId: string) {
-    const response = await api.get(`/api/games/${gameId}/categories/${categoryId}/questions?populate=*`)
-    return response.data
-  },
-
-  async submitAnswer(gameId: string, questionId: string, answer: string) {
-    const response = await api.post(`/api/games/${gameId}/submit-answer`, {
-      questionId,
-      answer,
-    });
-    return response.data;
-  },
-
-  // User endpoints
-  async toggleFavoriteGame(gameId: string) {
-    const response = await fetch(`${API_URL}/api/users/me/favorites`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        gameId,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to toggle favorite');
-    }
-
-    return response.json();
-  },
-
-  async updateUserPreferences(preferences: any) {
-    const response = await fetch(`${API_URL}/api/users/me/preferences`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(preferences),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to update preferences');
-    }
-
-    return response.json();
-  },
-
-  async uploadMusicTrack(file: File) {
-    const formData = new FormData();
-    formData.append('files', file);
-
-    const response = await fetch(`${API_URL}/api/upload`, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to upload music track');
-    }
-
-    return response.json();
-  },
-
-  // Admin endpoints
   async createGame(data: any) {
-    try {
-      const response = await api.post('/api/games', data)
-      return response.data
-    } catch (error) {
-      console.error('Error creating game:', error)
-      throw error
-    }
+    const response = await api.post('/games', data)
+    return response.data
   },
 
   async updateGame(id: string, data: any) {
-    try {
-      const response = await api.put(`/api/games/${id}`, data)
-      return response.data
-    } catch (error) {
-      console.error('Error updating game:', error)
-      throw error
-    }
-  },
-
-  async updateGameCategories(id: string, categories: any[]) {
-    try {
-      const response = await api.put(`/api/games/${id}/categories`, { categories })
-      return response.data
-    } catch (error) {
-      console.error('Error updating game categories:', error)
-      throw error
-    }
+    const response = await api.put(`/games/${id}`, data)
+    return response.data
   },
 
   async deleteGame(id: string) {
-    try {
-      const response = await api.delete(`/api/games/${id}`)
-      return response.data
-    } catch (error) {
-      console.error('Error deleting game:', error)
-      throw error
+    const response = await api.delete(`/games/${id}`)
+    return response.data
+  },
+
+  // Question endpoints
+  async getQuestions() {
+    const response = await api.get('/questions?populate=*')
+    return response.data
+  },
+
+  async getQuestion(id: string) {
+    const response = await api.get(`/questions/${id}?populate=*`)
+    return response.data
+  },
+
+  async createQuestion(data: any) {
+    const response = await api.post('/questions', data)
+    return response.data
+  },
+
+  async updateQuestion(id: string, data: any) {
+    const response = await api.put(`/questions/${id}`, data)
+    return response.data
+  },
+
+  async deleteQuestion(id: string) {
+    const response = await api.delete(`/questions/${id}`)
+    return response.data
+  },
+
+  // Admin endpoints
+  async getAdminGames() {
+    const response = await api.get('/games?populate=*')
+    return response.data
+  },
+
+  async getAdminQuestions() {
+    const response = await api.get('/questions?populate=*')
+    return response.data
+  },
+
+  async getAdminStats() {
+    const response = await api.get('/admin/stats')
+    return response.data
+  },
+
+  // Helper methods
+  get: (url: string, config?: any) => api.get(url, config),
+  post: (url: string, data?: any, config?: any) => api.post(url, data, config),
+  put: (url: string, data?: any, config?: any) => api.put(url, data, config),
+  delete: (url: string, config?: any) => api.delete(url, config),
+}
+
+// User Management
+export const getAdminUsers = () => api.get('/api/admin/users')
+export const getAdminUser = (id: number) => api.get(`/api/admin/users/${id}`)
+export const createAdminUser = (data: any) => api.post('/api/admin/users', data)
+export const updateAdminUser = (id: number, data: any) => api.put(`/api/admin/users/${id}`, data)
+export const deleteAdminUser = (id: number) => api.delete(`/api/admin/users/${id}`)
+
+// User Management API endpoints
+export const getUsers = async (page = 1, pageSize = 20) => {
+  const response = await api.get(`/api/users?pagination[page]=${page}&pagination[pageSize]=${pageSize}&populate=*`)
+  
+  if (!response.data) {
+    throw new Error('No data received from API')
+  }
+
+  // Transform the data to match our frontend needs
+  const users = Array.isArray(response.data) ? response.data : (response.data.data || [])
+  const total = response.data.meta?.pagination?.total || users.length
+  const pageCount = response.data.meta?.pagination?.pageCount || Math.ceil(total / pageSize)
+
+  return {
+    data: {
+      data: users.map((user: any) => ({
+        id: user.id,
+        username: user.username || '',
+        email: user.email || '',
+        fullName: user.profile?.fullName || user.username || '',
+        subscriptionStatus: user.subscriptionType || 'free',
+        blocked: !user.isActive,
+        confirmed: true, // Assuming all users are confirmed
+        createdAt: user.registrationDate || new Date().toISOString(),
+        // Additional fields from the schema
+        gameStats: user.gameStats || {},
+        preferences: user.preferences || {},
+        achievements: user.achievements || {},
+        totalScore: user.totalScore || 0,
+        gamesCompleted: user.gamesCompleted || 0,
+        lastLogin: user.lastLogin,
+        favoriteGames: user.favoriteGames?.map((game: any) => game.id) || [],
+        recentGames: user.recentGames || []
+      })),
+      meta: {
+        pagination: {
+          page,
+          pageSize,
+          pageCount,
+          total
+        }
+      }
     }
   }
 }
+
+export const getUser = async (id: number) => {
+  const response = await api.get(`/api/users/${id}?populate=*`)
+  const userData = response.data.data || response.data
+  return {
+    data: {
+      id: userData.id,
+      attributes: {
+        username: userData.username || '',
+        email: userData.email || '',
+        fullName: userData.fullName || userData.username || '',
+        subscriptionStatus: userData.subscriptionStatus || 'free',
+        blocked: userData.blocked || false,
+        confirmed: userData.confirmed || false,
+        createdAt: userData.createdAt || new Date().toISOString()
+      }
+    }
+  }
+}
+
+export const createUser = (data: any) => 
+  api.post(`/api/users`, { data })
+
+export const updateUser = (id: number, data: any) => 
+  api.put(`/api/users/${id}`, { data })
+
+export const deleteUser = (id: number) => 
+  api.delete(`/api/users/${id}`)
 
 export default strapiApi 
