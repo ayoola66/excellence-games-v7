@@ -1,3 +1,9 @@
+/**
+ * Type exports
+ */
+
+export * from './game';
+
 export interface Role {
   id: number
   name: string
@@ -35,6 +41,7 @@ export interface User {
   gameProgress?: Record<string, any>
   customMusicTrack?: any
   billingInfo?: BillingInfo
+  token?: string
 }
 
 export interface Admin {
@@ -79,15 +86,15 @@ export interface Game {
   type: 'straight' | 'nested'
   status: 'free' | 'premium'
   totalQuestions: number
-  categories: Category[]
+  categories?: Category[]
   createdAt: string
   updatedAt: string
   thumbnail?: {
     url: string
     name: string
-  }
+  } | string | null
   isActive: boolean
-  sortOrder: number
+  sortOrder?: number
 }
 
 export interface Question {

@@ -1,54 +1,39 @@
 'use client'
 
-import { useAuth } from '@/context/AuthContext'
-import { useRouter, usePathname } from 'next/navigation'
 import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/context/AuthContext'
 
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { user, admin, isLoading } = useAuth()
   const router = useRouter()
-  const pathname = usePathname()
+  const { user, isLoading } = useAuth()
 
   useEffect(() => {
-    if (isLoading) return
-
-    const isAdminLoginPage = pathname === '/admin/login'
-
-    // Handle admin login page
-    if (isAdminLoginPage) {
-      if (admin) {
-        router.push('/admin/dashboard')
-      }
-      return
+    // If the user is already authenticated, redirect to the dashboard
+    if (user && !isLoading) {
+      router.push('/user/dashboard')
     }
+  }, [user, isLoading, router])
 
-    // Handle user login/register pages
-    if (user) {
-      router.push('/user')
-    }
-  }, [user, admin, isLoading, router, pathname])
-
-  // Show loading state while checking auth
+  // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen gradient-primary flex items-center justify-center">
-        <div className="text-center">
-          <div className="spinner h-16 w-16 mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-pulse text-lg">Loading...</div>
       </div>
     )
   }
 
-  // For admin login page
-  if (pathname === '/admin/login') {
-    return !admin ? children : null
-  }
-
-  // For user login/register pages
-  return !user ? children : null
+  // Only show the auth layout if the user is not authenticated
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        {children}
+      </div>
+    </div>
+  )
 } 

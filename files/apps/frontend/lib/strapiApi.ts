@@ -1,6 +1,5 @@
 import axios from 'axios'
 import { User, UserPreferences, BillingInfo, AuthResponse } from '@/types'
-import { withRetry } from '@/utils/apiRetry'
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337',
@@ -18,13 +17,6 @@ api.interceptors.request.use(
     if (config.url?.startsWith('/api/api/')) {
       config.url = config.url.replace('/api/api/', '/api/')
     }
-
-    // Add JWT token if available
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-
     return config
   },
   (error) => Promise.reject(error)
@@ -34,9 +26,6 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && typeof window !== 'undefined') {
-      localStorage.removeItem('token')
-    }
     return Promise.reject(error)
   }
 )
@@ -48,9 +37,6 @@ export const strapiApi = {
       identifier: email,
       password
     })
-    if (response.data.jwt) {
-      localStorage.setItem('token', response.data.jwt)
-    }
     return response.data
   },
 
@@ -60,14 +46,10 @@ export const strapiApi = {
       password,
       username
     })
-    if (response.data.jwt) {
-      localStorage.setItem('token', response.data.jwt)
-    }
     return response.data
   },
 
   async logout(): Promise<void> {
-    localStorage.removeItem('token')
     await api.post('/api/auth/logout')
   },
 
@@ -206,156 +188,23 @@ export const strapiApi = {
   },
 
   // Admin Game Management
-  async createGame(formData: FormData) {
+  async createGame(data: any) {
     try {
-      // Extract regular fields from FormData
-      const gameData: any = {};
-      // Use forEach instead of for...of to avoid downlevelIteration issues
-      formData.forEach((value, key) => {
-        // Skip file fields
-        if (key !== 'thumbnail') {
-          gameData[key] = value;
-        }
-      });
-      
-      // Debug log for form data
-      console.log('Creating game with data:', gameData);
-      
-      // Create the game first
-      const response = await api.post('/api/games', { data: gameData });
-      const gameId = response.data.data.id;
-      console.log('Game created with ID:', gameId);
-      
-      // If there's a thumbnail file, upload it
-      const thumbnail = formData.get('thumbnail') as File;
-      if (thumbnail) {
-        console.log('Uploading thumbnail:', thumbnail.name, thumbnail.type, thumbnail.size);
-        
-        const uploadFormData = new FormData();
-        uploadFormData.append('files', thumbnail);
-        uploadFormData.append('ref', 'api::game.game');
-        uploadFormData.append('refId', gameId);
-        uploadFormData.append('field', 'thumbnail');
-        
-        try {
-          // Use retry mechanism for upload
-          const uploadResponse = await withRetry(
-            async () => {
-              const response = await api.post('/api/upload', uploadFormData, {
-                headers: {
-                  'Content-Type': 'multipart/form-data'
-                }
-              });
-              
-              // Verify the upload was successful
-              if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
-                throw new Error('Upload response format is unexpected');
-              }
-              
-              return response;
-            },
-            {
-              maxRetries: 3,
-              baseDelay: 1000,
-              isRetryable: (error) => {
-                // Retry on network errors or 5xx server errors
-                if (!error.response) return true;
-                return error.response.status >= 500 && error.response.status < 600;
-              }
-            }
-          );
-          
-          console.log('Thumbnail upload response (after retries if needed):', uploadResponse.data);
-        } catch (uploadError) {
-          console.error('Error uploading thumbnail after retries:', uploadError);
-          // Continue despite upload error - the game was created
-        }
-      }
-      
-      // Fetch the updated game to ensure we have the latest data including thumbnail
-      const updatedGameResponse = await api.get(`/api/games/${gameId}?populate=*`);
-      console.log('Updated game data:', updatedGameResponse.data);
-      
-      return updatedGameResponse.data;
+      const response = await api.post('/api/games', data)
+      return response.data
     } catch (error) {
-      console.error('Error creating game:', error);
-      throw error;
+      console.error('Error creating game:', error)
+      throw error
     }
   },
 
-  async updateGame(id: string, formData: FormData) {
+  async updateGame(id: string, data: any) {
     try {
-      // Extract regular fields from FormData
-      const gameData: any = {};
-      // Use forEach instead of for...of to avoid downlevelIteration issues
-      formData.forEach((value, key) => {
-        // Skip file fields
-        if (key !== 'thumbnail') {
-          gameData[key] = value;
-        }
-      });
-      
-      // Debug log for form data
-      console.log('Updating game with ID:', id, 'Data:', gameData);
-      
-      // Update the game data
-      const response = await api.put(`/api/games/${id}`, { data: gameData });
-      console.log('Game update response:', response.data);
-      
-      // If there's a thumbnail file, upload it
-      const thumbnail = formData.get('thumbnail') as File;
-      if (thumbnail) {
-        console.log('Uploading new thumbnail:', thumbnail.name, thumbnail.type, thumbnail.size);
-        
-        const uploadFormData = new FormData();
-        uploadFormData.append('files', thumbnail);
-        uploadFormData.append('ref', 'api::game.game');
-        uploadFormData.append('refId', id);
-        uploadFormData.append('field', 'thumbnail');
-        
-        try {
-          // Use retry mechanism for upload
-          const uploadResponse = await withRetry(
-            async () => {
-              const response = await api.post('/api/upload', uploadFormData, {
-                headers: {
-                  'Content-Type': 'multipart/form-data'
-                }
-              });
-              
-              // Verify the upload was successful
-              if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
-                throw new Error('Upload response format is unexpected');
-              }
-              
-              return response;
-            },
-            {
-              maxRetries: 3,
-              baseDelay: 1000,
-              isRetryable: (error) => {
-                // Retry on network errors or 5xx server errors
-                if (!error.response) return true;
-                return error.response.status >= 500 && error.response.status < 600;
-              }
-            }
-          );
-          
-          console.log('Thumbnail upload response (after retries if needed):', uploadResponse.data);
-        } catch (uploadError) {
-          console.error('Error uploading thumbnail after retries:', uploadError);
-          // Continue despite upload error - the game was updated
-        }
-      }
-      
-      // Fetch the updated game to ensure we have the latest data including thumbnail
-      const updatedGameResponse = await api.get(`/api/games/${id}?populate=*`);
-      console.log('Updated game data with thumbnail:', updatedGameResponse.data);
-      
-      return updatedGameResponse.data;
+      const response = await api.put(`/api/games/${id}`, data)
+      return response.data
     } catch (error) {
-      console.error('Error updating game:', error);
-      throw error;
+      console.error('Error updating game:', error)
+      throw error
     }
   },
 
@@ -381,73 +230,31 @@ export const strapiApi = {
 
   async getAdminGames() {
     try {
-      console.log('Fetching admin games with populate=*');
-      const response = await api.get('/api/games?populate=*');
-      console.log('Raw games response:', response.data);
-
-      if (!response.data?.data) {
-        console.warn('No games data in response');
-        return { data: [] };
-      }
-
-      // Map the response data to a flat structure with improved thumbnail handling
-      const mappedGames = response.data.data.map((game: any) => {
-        // Extract the thumbnail URL directly
-        let thumbnailUrl = null;
-        
-        if (game.attributes?.thumbnail?.data?.attributes?.url) {
-          // Handle full Strapi v4 response format
-          thumbnailUrl = game.attributes.thumbnail.data.attributes.url;
-        } else if (game.thumbnail?.data?.attributes?.url) {
-          // Handle direct access format
-          thumbnailUrl = game.thumbnail.data.attributes.url;
-        } else if (typeof game.thumbnail === 'string') {
-          // Handle direct URL string
-          thumbnailUrl = game.thumbnail;
-        }
-        
-        // Ensure URL is absolute
-        if (thumbnailUrl && !thumbnailUrl.startsWith('http') && !thumbnailUrl.startsWith('/')) {
-          thumbnailUrl = `${process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337'}${thumbnailUrl}`;
-        }
-        
-        console.log(`Game ${game.id} (${game.name || game.attributes?.name}) thumbnail:`, thumbnailUrl);
-        
-        return {
-          id: game.id,
-          name: game.attributes?.name || game.name || '',
-          description: game.attributes?.description || game.description || '',
-          type: game.attributes?.type || game.type || 'straight',
-          status: game.attributes?.status || game.status || 'free',
-          isActive: game.attributes?.isActive ?? game.isActive ?? true,
-          totalQuestions: game.attributes?.totalQuestions || game.totalQuestions || 0,
-          createdAt: game.attributes?.createdAt || game.createdAt || '',
-          updatedAt: game.attributes?.updatedAt || game.updatedAt || '',
-          sortOrder: game.attributes?.sortOrder || game.sortOrder || 0,
-          // Store the direct URL string for easier access
-          thumbnail: thumbnailUrl
-        };
-      });
-
-      console.log('Mapped games with thumbnails:', mappedGames);
-      return { data: mappedGames };
+      const response = await api.get('/api/games?populate=*')
+      return response.data
     } catch (error) {
-      console.error('Error fetching admin games:', error)
-      return { data: [] }
+      console.error('Error getting admin games:', error)
+      throw error
     }
   },
 
+  // Adding missing methods
   async getAdminQuestions() {
-    const response = await api.get('/api/questions?populate=*')
-    return {
-      data: response.data.data.map((question: any) => ({
-        id: question.id,
-        attributes: {
-          ...question.attributes,
-          game: question.attributes.game,
-          category: question.attributes.category
-        }
-      }))
+    try {
+      const response = await api.get('/api/questions?populate=*')
+      return {
+        data: response.data.data.map((question: any) => ({
+          id: question.id,
+          attributes: {
+            ...question.attributes,
+            game: question.attributes.game,
+            category: question.attributes.category
+          }
+        }))
+      }
+    } catch (error) {
+      console.error('Error fetching admin questions:', error)
+      return { data: [] }
     }
   },
 
@@ -477,11 +284,16 @@ export const strapiApi = {
   },
 
   async getQuestionsForGame(gameId: string) {
-    const response = await api.get(`/api/questions?filters[game][id][$eq]=${gameId}&populate=*`)
-    return response.data.data.map((question: any) => ({
-      id: question.id,
-      ...question.attributes
-    }))
+    try {
+      const response = await api.get(`/api/questions?filters[game][id][$eq]=${gameId}&populate=*`)
+      return response.data.data.map((question: any) => ({
+        id: question.id,
+        ...question.attributes
+      }))
+    } catch (error) {
+      console.error('Error fetching questions for game:', error)
+      return []
+    }
   },
 
   // Delete a question by ID
@@ -707,6 +519,7 @@ export const strapiApi = {
     return response.data
   },
 
+  // Generic API methods
   async get(endpoint: string) {
     try {
       const response = await api.get(endpoint)
@@ -730,9 +543,29 @@ export const strapiApi = {
   async post(endpoint: string, data?: any) {
     try {
       const response = await api.post(endpoint, data)
-      return response
+      return response.data
     } catch (error) {
-      console.error(`Error posting to ${endpoint}:`, error)
+      console.error(`Error in POST ${endpoint}:`, error)
+      throw error
+    }
+  },
+
+  async getCurrentUser() {
+    try {
+      const response = await api.get('/api/users/me?populate=role')
+      return response.data
+    } catch (error) {
+      console.error('Error fetching current user:', error)
+      throw error
+    }
+  },
+
+  async getUserData() {
+    try {
+      const response = await api.get('/api/admin/user-data')
+      return response.data
+    } catch (error) {
+      console.error('Error fetching user data:', error)
       throw error
     }
   }
