@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import axios from 'axios'
 import compatToast from '@/lib/notificationManager';
 
 interface User {
@@ -51,54 +52,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(updatedUser)
   }
 
+  // Check if we have a token in cookies
+  const getTokenFromCookies = () => {
+    if (typeof document === 'undefined') return { userToken: null, adminToken: null };
+    
+    const cookies = document.cookie.split(';');
+    const userToken = cookies.find(cookie => cookie.trim().startsWith('clientUserToken='));
+    const adminToken = cookies.find(cookie => cookie.trim().startsWith('adminToken='));
+    
+    return {
+      userToken: userToken ? userToken.split('=')[1] : null,
+      adminToken: adminToken ? adminToken.split('=')[1] : null
+    };
+  };
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check if we have a token before making the request
-        const cookies = document.cookie.split(';')
-        const userToken = cookies.find(cookie => cookie.trim().startsWith('clientUserToken='))
-        const adminToken = cookies.find(cookie => cookie.trim().startsWith('adminToken='))
+        const { userToken, adminToken } = getTokenFromCookies();
         
         if (!userToken && !adminToken) {
-          setUser(null)
-          setAdmin(null)
-          setIsLoading(false)
-          return
+          setUser(null);
+          setAdmin(null);
+          setIsLoading(false);
+          return;
         }
 
         // Check user session if we have a user token
         if (userToken) {
           try {
             console.log('[AuthContext] Checking user auth with token');
-            const userResponse = await fetch('/api/auth/me', {
-              method: 'GET',
-              credentials: 'include',
+            const response = await axios.get('/api/auth/me', {
+              withCredentials: true,
               headers: {
                 'Cache-Control': 'no-cache',
                 'Pragma': 'no-cache'
               }
             });
 
-            if (userResponse.ok) {
-              const data = await userResponse.json();
-              console.log('[AuthContext] User auth successful');
-              setUser(data.user);
-            } else {
-              // Log the error response
-              const errorData = await userResponse.text();
-              console.warn('[AuthContext] User auth check failed:', userResponse.status, errorData);
-              
-              // Only clear user token if it's invalid
-              if (userResponse.status === 401) {
-                console.warn('[AuthContext] Clearing invalid user token');
-                document.cookie = 'clientUserToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-                document.cookie = 'userToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-                setUser(null);
-              }
+            console.log('[AuthContext] User auth successful');
+            setUser(response.data.user);
+          } catch (error: any) {
+            console.warn('[AuthContext] User auth check failed:', error.message);
+            
+            // Clear tokens on 401 Unauthorized
+            if (error.response?.status === 401) {
+              console.warn('[AuthContext] Clearing invalid user token');
+              document.cookie = 'clientUserToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+              document.cookie = 'userToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+              setUser(null);
             }
-          } catch (error) {
-            console.warn('[AuthContext] User auth check error:', error);
-            // Don't clear state on network errors
           }
         }
 
@@ -106,49 +109,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (adminToken) {
           try {
             console.log('[AuthContext] Checking admin auth with token');
-            const adminResponse = await fetch('/api/auth/admin/me', {
-              method: 'GET',
-              credentials: 'include',
+            const response = await axios.get('/api/auth/admin/me', {
+              withCredentials: true,
               headers: {
                 'Cache-Control': 'no-cache',
                 'Pragma': 'no-cache'
               }
             });
 
-            if (adminResponse.ok) {
-              const data = await adminResponse.json();
-              if (data.error && data.shouldRetry) {
-                // Network error, keep existing state
-                console.warn('[AuthContext] Network error during admin auth check:', data.error);
-              } else {
-                console.log('[AuthContext] Admin auth successful');
-                setAdmin(data.admin);
-              }
-            } else {
-              // Log the error response
-              const errorData = await adminResponse.text();
-              console.warn('[AuthContext] Admin auth check failed:', adminResponse.status, errorData);
-              
-              // Only clear admin token if it's invalid
-              if (adminResponse.status === 401) {
-                console.warn('[AuthContext] Clearing invalid admin token');
-                document.cookie = 'adminToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-                setAdmin(null);
-                // Don't redirect here, let the page handle it
-              }
+            console.log('[AuthContext] Admin auth successful');
+            setAdmin(response.data.admin);
+          } catch (error: any) {
+            console.warn('[AuthContext] Admin auth check failed:', error.message);
+            
+            // Clear admin token on 401 Unauthorized
+            if (error.response?.status === 401) {
+              console.warn('[AuthContext] Clearing invalid admin token');
+              document.cookie = 'adminToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+              setAdmin(null);
             }
-          } catch (error) {
-            console.warn('[AuthContext] Admin auth check error:', error);
-            // Don't clear state on network errors
           }
         }
       } catch (error) {
         console.error('[AuthContext] Auth check error:', error);
-        // Don't clear states on network errors
-        if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-          console.warn('[AuthContext] Network error during auth check - maintaining current state');
-          return;
-        }
       } finally {
         setIsLoading(false);
       }
@@ -159,126 +142,106 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      setIsLoading(true)
+      setIsLoading(true);
       
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-        credentials: 'include'
-      })
+      const response = await axios.post('/api/auth/login', {
+        email,
+        password
+      }, {
+        withCredentials: true
+      });
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Login failed')
+      if (response.data?.user) {
+        setUser(response.data.user);
+        compatToast.success(`Welcome back, ${response.data.user.fullName || response.data.user.username}!`)
+        return true;
       }
-
-      const data = await response.json()
       
-      if (!data.user) {
-        throw new Error('Invalid response from server')
-      }
-
-      setUser(data.user)
-      compatToast.success(`Welcome back, ${data.user.fullName || data.user.username}!`)
-      return true
+      return false;
     } catch (error: any) {
-      console.error('Login error:', error)
-      compatToast.error(error.message || 'Login failed')
-      return false
+      console.error('[AuthContext] Login error:', error);
+      compatToast.error(error.message || 'Login failed');
+      return false;
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const adminLogin = async (email: string, password: string): Promise<boolean> => {
     try {
-      setIsLoading(true)
+      setIsLoading(true);
 
-      const response = await fetch('/api/auth/admin/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-        credentials: 'include'
-      })
+      const response = await axios.post('/api/auth/admin/login', {
+        email,
+        password
+      }, {
+        withCredentials: true
+      });
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Invalid credentials')
+      if (response.data?.admin) {
+        setAdmin(response.data.admin);
+        compatToast.success(`Welcome back, ${response.data.admin.fullName}!`)
+        return true;
       }
-
-      const data = await response.json()
       
-      if (!data.admin) {
-        throw new Error('Invalid response from server')
-      }
-
-      setAdmin(data.admin)
-      compatToast.success(`Welcome back, ${data.admin.fullName}!`)
-      return true
+      return false;
     } catch (error: any) {
-      console.error('Admin login error:', error)
-      compatToast.error(error.message || 'Admin login failed')
-      return false
+      console.error('[AuthContext] Admin login error:', error);
+      compatToast.error(error.message || 'Admin login failed');
+      return false;
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const logout = async () => {
     try {
       // Clear user state first
-      setUser(null)
+      setUser(null);
       
       // Call logout endpoint
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include'
-      })
+      await axios.post('/api/auth/logout', {}, {
+        withCredentials: true
+      });
 
       // Clear cookies manually as well
-      document.cookie = 'clientUserToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-      document.cookie = 'adminToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+      document.cookie = 'clientUserToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = 'userToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
       
       // Force redirect to login
-      router.push('/login')
-      router.refresh() // Force a full page refresh
+      router.push('/login');
+      router.refresh(); // Force a full page refresh
       
-      compatToast.success('Logged out successfully')
+      compatToast.success('Logged out successfully');
     } catch (error) {
-      console.error('Logout error:', error)
-      compatToast.error('Failed to logout')
+      console.error('[AuthContext] Logout error:', error);
+      compatToast.error('Failed to logout');
     }
-  }
+  };
 
   const adminLogout = async () => {
     try {
       // Clear admin state first
-      setAdmin(null)
+      setAdmin(null);
       
       // Call admin logout endpoint
-      await fetch('/api/auth/admin/logout', {
-        method: 'POST',
-        credentials: 'include'
-      })
+      await axios.post('/api/auth/admin/logout', {}, {
+        withCredentials: true
+      });
 
       // Clear cookies manually as well
-      document.cookie = 'adminToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+      document.cookie = 'adminToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
       
       // Force redirect to admin login
-      router.push('/admin/login')
-      router.refresh() // Force a full page refresh
+      router.push('/admin/login');
+      router.refresh(); // Force a full page refresh
       
-      compatToast.success('Admin logged out successfully')
+      compatToast.success('Admin logged out successfully');
     } catch (error) {
-      console.error('Admin logout error:', error)
-      compatToast.error('Failed to logout')
+      console.error('[AuthContext] Admin logout error:', error);
+      compatToast.error('Failed to logout');
     }
-  }
+  };
 
   return (
     <AuthContext.Provider

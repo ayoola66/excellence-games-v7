@@ -19,6 +19,7 @@ export async function POST(request: Request) {
       });
     }
 
+    // Parse request body
     const body = await request.json();
     const { email, password } = body;
 
@@ -43,15 +44,11 @@ export async function POST(request: Request) {
       // Continue with login attempt even if admin check fails
     }
 
-    // Log the request details (but not the password)
-    console.log('[API/auth/login] Login attempt:', {
-      email,
-      apiUrl: API_URL,
-      timestamp: new Date().toISOString()
-    });
+    // Log the request (but not the password)
+    console.log(`[API/auth/login] Login attempt for: ${email}`);
 
-    // Attempt to login with Strapi
     try {
+      // Attempt to login with Strapi
       const response = await axios.post(`${API_URL}/api/auth/local`, {
         identifier: email,
         password,
@@ -67,9 +64,9 @@ export async function POST(request: Request) {
         );
       }
 
-      console.log('[API/auth/login] Login successful for:', email);
+      console.log(`[API/auth/login] Login successful for: ${email}`);
 
-      // Set the JWT token in an HTTP-only cookie
+      // Set the JWT token in HTTP-only cookie
       cookies().set('userToken', data.jwt, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -78,7 +75,7 @@ export async function POST(request: Request) {
         maxAge: 30 * 24 * 60 * 60 // 30 days
       });
 
-      // Set additional readable cookie for client side
+      // Set client-accessible cookie
       cookies().set('clientUserToken', data.jwt, {
         httpOnly: false,
         secure: process.env.NODE_ENV === 'production',
@@ -98,8 +95,8 @@ export async function POST(request: Request) {
           subscriptionStatus: data.user.subscriptionStatus || 'free'
         }
       });
-    } catch (strapiError: any) {
-      // Clear any existing token on authentication failure
+    } catch (error: any) {
+      // Clear any existing tokens on authentication failure
       cookies().set('userToken', '', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -117,23 +114,28 @@ export async function POST(request: Request) {
       });
 
       console.error('[API/auth/login] Strapi login error:', {
-        status: strapiError.response?.status,
-        data: strapiError.response?.data,
-        message: strapiError.message
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
       });
 
-      const errorMessage = strapiError.response?.data?.error?.message || 'Authentication failed';
-      const statusCode = strapiError.response?.status || 401;
+      // Return appropriate error message
+      if (error.response?.data?.error?.message) {
+        return NextResponse.json(
+          { error: error.response.data.error.message },
+          { status: error.response.status || 401 }
+        );
+      }
 
       return NextResponse.json(
-        { error: errorMessage },
-        { status: statusCode }
+        { error: 'Authentication failed. Please check your credentials and try again.' },
+        { status: 401 }
       );
     }
   } catch (error: any) {
     console.error('[API/auth/login] Unexpected error:', error);
     return NextResponse.json(
-      { error: 'Authentication failed. Please try again.' },
+      { error: 'An unexpected error occurred. Please try again.' },
       { status: 500 }
     );
   }

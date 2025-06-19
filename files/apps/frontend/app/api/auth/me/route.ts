@@ -17,31 +17,48 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log(`[API/auth/me] Using token: ${token.name}=${token.value.substring(0, 10)}...`);
+    try {
+      console.log(`[API/auth/me] Using token: ${token.name}=${token.value.substring(0, 10)}...`);
 
-    const response = await axios.get(`${API_URL}/api/users/me`, {
-      headers: {
-        Authorization: `Bearer ${token.value}`,
-      },
-    })
+      const response = await axios.get(`${API_URL}/api/users/me`, {
+        headers: {
+          Authorization: `Bearer ${token.value}`,
+        },
+      })
 
-    const u = response.data
-    return NextResponse.json(
-      { user: {
-          id: u.id,
-          email: u.email,
-          username: u.username,
-          fullName: u.fullName || u.username,
-          role: u.role?.type || 'authenticated',
-          subscriptionStatus: u.subscriptionStatus || 'free'
-        } },
-      { headers: { 'Cache-Control': 'no-store' } }
-    )
+      const userData = response.data;
+      console.log('[API/auth/me] User data retrieved successfully');
+
+      return NextResponse.json(
+        { user: {
+            id: userData.id,
+            email: userData.email,
+            username: userData.username,
+            fullName: userData.fullName || userData.username,
+            role: userData.role?.type || 'authenticated',
+            subscriptionStatus: userData.subscriptionStatus || 'free'
+          } },
+        { headers: { 'Cache-Control': 'no-store' } }
+      )
+    } catch (error: any) {
+      console.error('[API/auth/me] Strapi API error:', error.response?.data || error.message);
+      
+      // Clear invalid tokens
+      if (error.response?.status === 401) {
+        cookieStore.set('userToken', '', { maxAge: 0, path: '/' });
+        cookieStore.set('clientUserToken', '', { maxAge: 0, path: '/' });
+      }
+      
+      return NextResponse.json(
+        { error: error.response?.data?.message || 'Authentication failed' },
+        { status: error.response?.status || 401, headers: { 'Cache-Control': 'no-store' } }
+      )
+    }
   } catch (error: any) {
-    console.error('[API/auth/me] Auth check error:', error.response?.data || error.message)
+    console.error('[API/auth/me] Unexpected error:', error);
     return NextResponse.json(
-      { error: 'Authentication failed' },
-      { status: 401, headers: { 'Cache-Control': 'no-store' } }
+      { error: 'Authentication check failed' },
+      { status: 500, headers: { 'Cache-Control': 'no-store' } }
     )
   }
 }
@@ -61,22 +78,30 @@ export async function PUT(request: Request) {
       )
     }
 
-    const response = await axios.put(`${API_URL}/api/users/me`, {
-      fullName,
-      email,
-      currentPassword,
-      newPassword,
-    }, {
-      headers: {
-        Authorization: `Bearer ${token.value}`,
-      },
-    })
+    try {
+      const response = await axios.put(`${API_URL}/api/users/me`, {
+        fullName,
+        email,
+        currentPassword,
+        newPassword,
+      }, {
+        headers: {
+          Authorization: `Bearer ${token.value}`,
+        },
+      })
 
-    return NextResponse.json(response.data)
+      return NextResponse.json(response.data)
+    } catch (error: any) {
+      console.error('[API/auth/me] Update profile error:', error.response?.data || error.message);
+      const status = error.response?.status || 500
+      const message = error.response?.data?.error?.message || 'Failed to update profile'
+      return NextResponse.json({ error: message }, { status })
+    }
   } catch (error: any) {
-    console.error('Failed to update user profile:', error)
-    const status = error.response?.status || 500
-    const message = error.response?.data?.error?.message || 'Internal server error'
-    return NextResponse.json({ error: message }, { status })
+    console.error('[API/auth/me] Unexpected error during profile update:', error);
+    return NextResponse.json(
+      { error: 'Failed to update profile' },
+      { status: 500 }
+    )
   }
 } 

@@ -2,8 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useAuth } from '@/context/AuthContext'
-import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { 
   ArrowLeftIcon,
@@ -13,12 +11,11 @@ import {
   EyeIcon,
   EyeSlashIcon
 } from '@heroicons/react/24/outline'
-import compatToast from '@/lib/notificationManager';
+import axios from 'axios'
 
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { login, setUser } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -37,49 +34,30 @@ export default function LoginPage() {
     
     if (!formData.email || !formData.password) {
       setErrorMessage('Please fill in all fields')
-      compatToast.error('Please fill in all fields')
       return
     }
 
     setIsLoading(true)
 
     try {
-      // Direct API call instead of using auth context login
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
-        credentials: 'include'
+      // Direct API call with axios for better error handling
+      const response = await axios.post('/api/auth/login', {
+        email: formData.email,
+        password: formData.password,
+      }, {
+        withCredentials: true
       })
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed')
-      }
-      
-      if (!data.user) {
+      if (response.data?.user) {
+        // Success - redirect to the return URL
+        router.push(returnTo)
+      } else {
         throw new Error('Invalid response from server')
       }
-
-      // Set the user in the auth context and redirect
-      setUser(data.user)
-      compatToast.success(`Welcome back, ${data.user.fullName || data.user.username}!`)
-      
-      // Small delay to allow the toast to show
-      setTimeout(() => {
-        router.push(returnTo)
-      }, 300)
     } catch (error: any) {
       console.error('Login error:', error)
-      const errorMsg = error.message || 'Login failed. Please try again.'
+      const errorMsg = error.response?.data?.error || error.message || 'Login failed. Please try again.'
       setErrorMessage(errorMsg)
-      compatToast.error(errorMsg)
       
       // If the error is related to invalid credentials, clear the password field
       if (errorMsg.toLowerCase().includes('invalid') || errorMsg.toLowerCase().includes('incorrect')) {
@@ -96,9 +74,9 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex flex-col md:flex-row">
       {/* Left Side - Form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center p-8 lg:p-24 bg-white">
+      <div className="w-full md:w-1/2 flex flex-col justify-center p-6 md:p-12 lg:p-24 bg-white">
         <Link 
           href="/"
           className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-8"
@@ -205,7 +183,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right Side - Image */}
-      <div className="hidden lg:block lg:w-1/2 bg-gradient-to-br from-blue-500 to-purple-600">
+      <div className="hidden md:block md:w-1/2 bg-gradient-to-br from-blue-500 to-purple-600">
         <div className="h-full flex items-center justify-center p-12">
           <div className="max-w-lg text-center text-white">
             <h2 className="text-4xl font-bold mb-4">Elite Games</h2>
