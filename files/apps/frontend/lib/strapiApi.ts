@@ -1,14 +1,27 @@
 import axios from 'axios'
 import { User, UserPreferences, BillingInfo, AuthResponse } from '@/types'
 
+const API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337'
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337',
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
   timeout: 10000,
   withCredentials: true
 })
+
+// Function to get token from cookies
+const getToken = () => {
+  if (typeof document === 'undefined') return null;
+  
+  // Try to get either userToken or clientUserToken
+  const userToken = document.cookie.split('userToken=')[1]?.split(';')[0];
+  const clientUserToken = document.cookie.split('clientUserToken=')[1]?.split(';')[0];
+  
+  return userToken || clientUserToken;
+};
 
 // Request interceptor
 api.interceptors.request.use(
@@ -17,6 +30,13 @@ api.interceptors.request.use(
     if (config.url?.startsWith('/api/api/')) {
       config.url = config.url.replace('/api/api/', '/api/')
     }
+    
+    // Add token to request if available
+    const token = getToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    
     return config
   },
   (error) => Promise.reject(error)
@@ -26,6 +46,17 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.error('API Error:', error.message, error.response?.status);
+    
+    // Handle 401 Unauthorized errors
+    if (error.response?.status === 401) {
+      // Only redirect if we're in the browser
+      if (typeof window !== 'undefined') {
+        console.warn('Session expired - redirecting to login');
+        window.location.href = '/login';
+      }
+    }
+    
     return Promise.reject(error)
   }
 )
@@ -61,6 +92,12 @@ export const strapiApi = {
   // Games
   async getGames() {
     try {
+      // Add a debug log to check the token
+      if (typeof window !== 'undefined') {
+        const token = getToken();
+        console.log('Using auth token:', token ? `${token.substring(0, 10)}...` : 'No token found');
+      }
+      
       const response = await api.get('/api/games?populate=*')
       console.log('Raw games response:', response.data)
       
@@ -100,9 +137,20 @@ export const strapiApi = {
           }
         }))
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching games:', error)
-      return { data: [] }
+      
+      // Check if it's an authentication error
+      if (error.response?.status === 401) {
+        // Redirect to login if in browser
+        if (typeof window !== 'undefined') {
+          console.warn('Authentication required - redirecting to login');
+          window.location.href = '/login?from=/user/games';
+          return { data: [], error: 'Authentication required' };
+        }
+      }
+      
+      return { data: [], error: error.message || 'Failed to fetch games' }
     }
   },
 
@@ -248,13 +296,12 @@ export const strapiApi = {
           attributes: {
             ...question.attributes,
             game: question.attributes.game,
-            category: question.attributes.category
           }
         }))
       }
     } catch (error) {
-      console.error('Error fetching admin questions:', error)
-      return { data: [] }
+      console.error('Error getting admin questions:', error)
+      throw error
     }
   },
 
@@ -566,6 +613,76 @@ export const strapiApi = {
       return response.data
     } catch (error) {
       console.error('Error fetching user data:', error)
+      throw error
+    }
+  },
+
+  // Add the missing methods for game questions and file uploads
+  async getAdminGame(id: string) {
+    try {
+      const response = await api.get(`/api/games/${id}?populate=*`)
+      return response.data
+    } catch (error) {
+      console.error(`Error getting admin game ${id}:`, error)
+      throw error
+    }
+  },
+
+  async getGameQuestions(gameId: string) {
+    try {
+      const response = await api.get(`/api/games/${gameId}/questions?populate=*`)
+      return {
+        data: response.data.data || []
+      }
+    } catch (error) {
+      console.error(`Error getting questions for game ${gameId}:`, error)
+      return { data: [] }
+    }
+  },
+
+  async uploadFile(formData: FormData) {
+    try {
+      const response = await api.post('/api/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+      return response
+    } catch (error) {
+      console.error('Error uploading file:', error)
+      throw error
+    }
+  },
+
+  // Import questions for a game
+  async importQuestions(gameId: string, questions: any[]) {
+    try {
+      const response = await api.post('/api/questions/import', {
+        gameId,
+        questions
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error importing questions:', error)
+      throw error
+    }
+  },
+  
+  // Import questions from XLSX file for nested games
+  async importQuestionsXLSX(gameId: string, xlsxFile: File) {
+    const formData = new FormData()
+    formData.append('gameId', gameId)
+    formData.append('xlsxFile', xlsxFile, xlsxFile.name)
+    
+    try {
+      const response = await api.post('/api/questions/import-xlsx', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error importing XLSX questions:', error)
       throw error
     }
   }

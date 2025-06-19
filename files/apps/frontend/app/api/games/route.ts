@@ -6,55 +6,73 @@ const API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337
 
 export async function GET(request: NextRequest) {
   try {
-    // Get the cookie token
     const cookieStore = cookies()
-    const token = cookieStore.get('userToken')
+    const token = cookieStore.get('userToken') || cookieStore.get('clientUserToken')
 
     if (!token) {
-      console.warn('No user token found in cookies')
+      console.warn('[API] No user token found in cookies')
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized - No token found' },
         { status: 401 }
       )
     }
 
-    // ----- Development debug (token snippet) -----
-    // console.debug('Token OK:', token.value.substring(0, 10) + '…')
-    // ---------------------------------------------
+    console.log(`[API] Using token: ${token.name}=${token.value.substring(0, 10)}...`)
 
-    // Make request directly to Strapi with proper Authorization header
-    const response = await axios.get(`${API_URL}/api/games?populate=*`, {
+    // Fetch games with all related data
+    const response = await axios.get(`${API_URL}/api/games`, {
+      params: {
+        'populate[0]': 'thumbnail',
+        'populate[1]': 'categories',
+        'populate[2]': 'questions'
+      },
       headers: {
         'Authorization': `Bearer ${token.value}`,
         'Content-Type': 'application/json'
       }
     })
 
-    if (!response.data?.data) {
-      console.warn('No games data in response:', response.data)
+    console.log(`[API] Games response status: ${response.status}`)
+    
+    if (!response.data || !response.data.data) {
+      console.warn('[API] No data in Strapi response')
       return NextResponse.json({ data: [] })
     }
 
-    // Return the raw Strapi response
-    return NextResponse.json(response.data)
+    // Transform Strapi response to match frontend expectations
+    const transformedData = response.data.data.map((game: any) => ({
+      id: game.id,
+      name: game.attributes.title || game.attributes.name,
+      description: game.attributes.description,
+      type: game.attributes.type?.toLowerCase(),
+      status: game.attributes.status,
+      totalQuestions: game.attributes.totalQuestions,
+      thumbnail: game.attributes.thumbnail?.data?.attributes?.url 
+        ? `${API_URL}${game.attributes.thumbnail.data.attributes.url}`
+        : null,
+      categories: game.attributes.categories?.data?.map((cat: any) => ({
+        id: cat.id,
+        name: cat.attributes.name
+      })) || []
+    }))
+
+    return NextResponse.json({ data: transformedData })
   } catch (error: any) {
-    // Log detailed error for debugging
-    console.error('Games fetch error:', {
+    console.error('[API] Games fetch error:', {
       message: error.message,
       response: error.response?.data,
-      status: error.response?.status,
-      headers: error.response?.headers
+      status: error.response?.status
     })
     
-    if (error.response?.status === 401 || error.response?.status === 403) {
+    if (error.response?.status === 401) {
       return NextResponse.json(
-        { error: 'Unauthorized - Please log in again' },
-        { status: error.response.status }
+        { error: 'Session expired - Please log in again' },
+        { status: 401 }
       )
     }
     
     return NextResponse.json(
-      { error: 'Failed to fetch games', details: error.response?.data?.error || error.message },
+      { error: error.message || 'Failed to fetch games' },
       { status: 500 }
     )
   }

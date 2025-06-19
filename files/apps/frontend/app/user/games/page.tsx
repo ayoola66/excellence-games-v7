@@ -3,60 +3,83 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { strapiApi } from "@/lib/strapiApi";
 import { useAuth } from "@/context/AuthContext";
+import Image from "next/image";
 
-interface User {
-  premium?: boolean;
+interface Game {
+  id: string;
+  name: string;
+  description: string;
+  type: string;
+  status?: string;
+  thumbnail?: string | null;
+  categories: Array<{ id: string; name: string }>;
+  totalQuestions?: number;
 }
 
 export default function UserGamesPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [games, setGames] = useState<any[]>([]);
+  const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'free' | 'premium'>('all');
   const [userIsPremium, setUserIsPremium] = useState(false);
 
   useEffect(() => {
-    const fetchUserAndGames = async () => {
+    const fetchGames = async () => {
       try {
         if (user) {
           // Set premium status from user context
           setUserIsPremium(user.subscriptionStatus === 'premium' || false);
           
-          // Fetch games
-          const response = await strapiApi.getGames();
-          if (response?.data) {
-            setGames(response.data);
+          // Fetch games from our new API route
+          const res = await fetch("/api/games", {
+            credentials: 'include' // Important for sending cookies
+          });
+
+          if (res.status === 401) {
+            router.push('/login?from=/user/games');
+            return;
           }
+
+          if (!res.ok) {
+            throw new Error("Failed to fetch games");
+          }
+
+          const { data, error } = await res.json();
+          
+          if (error) {
+            throw new Error(error);
+          }
+
+          setGames(data || []);
         }
       } catch (err: any) {
-        console.error('Error fetching data:', err);
-        setError('Failed to load games');
+        console.error('Error fetching games:', err);
+        setError(err.message || 'Failed to load games');
       } finally {
         setLoading(false);
       }
     };
 
     if (user) {
-      fetchUserAndGames();
+      fetchGames();
     } else if (!loading) {
       router.push('/login?from=/user/games');
     }
   }, [user, router]);
 
   const filteredGames = games.filter((game) => {
-    const gameAttributes = game.attributes;
     if (filter === 'all') return true;
-    return gameAttributes.status === filter;
+    return game.status === filter;
   });
 
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-pulse text-lg">Loading games...</div>
+        <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+        <div className="ml-3 text-lg">Loading games...</div>
       </div>
     );
   }
@@ -77,6 +100,12 @@ export default function UserGamesPage() {
       {error && (
         <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
           <p className="text-red-700">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-2 text-blue-600 hover:text-blue-800"
+          >
+            Try again
+          </button>
         </div>
       )}
       
@@ -122,9 +151,7 @@ export default function UserGamesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredGames.map((game) => {
-            const gameAttributes = game.attributes;
-            const isPremium = gameAttributes.status === 'premium';
-            const thumbnailUrl = gameAttributes.thumbnail?.data?.attributes?.url || '/placeholder-game.jpg';
+            const isPremium = game.status === 'premium';
             
             return (
               <div 
@@ -132,11 +159,18 @@ export default function UserGamesPage() {
                 className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200"
               >
                 <div className="relative h-40">
-                  <img 
-                    src={thumbnailUrl} 
-                    alt={gameAttributes.name} 
-                    className="w-full h-full object-cover"
-                  />
+                  {game.thumbnail ? (
+                    <Image 
+                      src={game.thumbnail} 
+                      alt={game.name}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                      <span className="text-gray-400">No image</span>
+                    </div>
+                  )}
                   {isPremium && (
                     <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">
                       Premium
@@ -145,16 +179,21 @@ export default function UserGamesPage() {
                 </div>
                 
                 <div className="p-4">
-                  <h2 className="text-xl font-semibold mb-2">{gameAttributes.name}</h2>
+                  <h2 className="text-xl font-semibold mb-2">{game.name}</h2>
                   
                   <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                    {gameAttributes.description || 'No description available.'}
+                    {game.description || 'No description available.'}
                   </p>
                   
                   <div className="flex items-center text-sm text-gray-500 mb-4">
                     <span className="mr-3">
-                      Type: {gameAttributes.type === 'linear' ? 'Linear' : 'Nested'}
+                      Type: {game.type === 'linear' ? 'Linear' : 'Nested'}
                     </span>
+                    {game.totalQuestions !== undefined && (
+                      <span>
+                        Questions: {game.totalQuestions}
+                      </span>
+                    )}
                   </div>
                   
                   <Link

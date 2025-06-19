@@ -7,14 +7,17 @@ const API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337
 export async function GET(request: NextRequest) {
   try {
     const cookieStore = cookies()
-    const token = cookieStore.get('userToken')
+    const token = cookieStore.get('userToken') || cookieStore.get('clientUserToken')
 
     if (!token) {
+      console.warn('[API/auth/me] No authentication token found');
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401, headers: { 'Cache-Control': 'no-store' } }
       )
     }
+
+    console.log(`[API/auth/me] Using token: ${token.name}=${token.value.substring(0, 10)}...`);
 
     const response = await axios.get(`${API_URL}/api/users/me`, {
       headers: {
@@ -35,7 +38,7 @@ export async function GET(request: NextRequest) {
       { headers: { 'Cache-Control': 'no-store' } }
     )
   } catch (error: any) {
-    console.error('Auth check error:', error.response?.data || error.message)
+    console.error('[API/auth/me] Auth check error:', error.response?.data || error.message)
     return NextResponse.json(
       { error: 'Authentication failed' },
       { status: 401, headers: { 'Cache-Control': 'no-store' } }
@@ -47,15 +50,25 @@ export async function PUT(request: Request) {
   try {
     const body = await request.json()
     const { fullName, email, currentPassword, newPassword } = body
+    
+    const cookieStore = cookies()
+    const token = cookieStore.get('userToken') || cookieStore.get('clientUserToken')
 
-    const response = await axios.put(`${API_URL}/users/me`, {
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Not authenticated' },
+        { status: 401 }
+      )
+    }
+
+    const response = await axios.put(`${API_URL}/api/users/me`, {
       fullName,
       email,
       currentPassword,
       newPassword,
     }, {
       headers: {
-        Authorization: `Bearer ${cookies().get('userToken')?.value}`,
+        Authorization: `Bearer ${token.value}`,
       },
     })
 
