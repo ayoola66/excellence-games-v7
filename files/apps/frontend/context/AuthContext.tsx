@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import toast from 'react-hot-toast'
+import compatToast from '@/lib/notificationManager';
 
 interface User {
   id: string
@@ -59,33 +59,103 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userToken = cookies.find(cookie => cookie.trim().startsWith('clientUserToken='))
         const adminToken = cookies.find(cookie => cookie.trim().startsWith('adminToken='))
         
-        if (!userToken) {
+        if (!userToken && !adminToken) {
           setUser(null)
+          setAdmin(null)
           setIsLoading(false)
           return
         }
 
-        // Check user session only if we have a token
-        const userResponse = await fetch('/api/auth/me', {
-          credentials: 'include'
-        })
-        if (userResponse.ok) {
-          const data = await userResponse.json()
-          setUser(data.user)
-        } else {
-          // Clear user if not authenticated
-          setUser(null)
+        // Check user session if we have a user token
+        if (userToken) {
+          try {
+            console.log('[AuthContext] Checking user auth with token');
+            const userResponse = await fetch('/api/auth/me', {
+              method: 'GET',
+              credentials: 'include',
+              headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+              }
+            });
+
+            if (userResponse.ok) {
+              const data = await userResponse.json();
+              console.log('[AuthContext] User auth successful');
+              setUser(data.user);
+            } else {
+              // Log the error response
+              const errorData = await userResponse.text();
+              console.warn('[AuthContext] User auth check failed:', userResponse.status, errorData);
+              
+              // Only clear user token if it's invalid
+              if (userResponse.status === 401) {
+                console.warn('[AuthContext] Clearing invalid user token');
+                document.cookie = 'clientUserToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                document.cookie = 'userToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                setUser(null);
+              }
+            }
+          } catch (error) {
+            console.warn('[AuthContext] User auth check error:', error);
+            // Don't clear state on network errors
+          }
+        }
+
+        // Check admin session if we have an admin token
+        if (adminToken) {
+          try {
+            console.log('[AuthContext] Checking admin auth with token');
+            const adminResponse = await fetch('/api/auth/admin/me', {
+              method: 'GET',
+              credentials: 'include',
+              headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+              }
+            });
+
+            if (adminResponse.ok) {
+              const data = await adminResponse.json();
+              if (data.error && data.shouldRetry) {
+                // Network error, keep existing state
+                console.warn('[AuthContext] Network error during admin auth check:', data.error);
+              } else {
+                console.log('[AuthContext] Admin auth successful');
+                setAdmin(data.admin);
+              }
+            } else {
+              // Log the error response
+              const errorData = await adminResponse.text();
+              console.warn('[AuthContext] Admin auth check failed:', adminResponse.status, errorData);
+              
+              // Only clear admin token if it's invalid
+              if (adminResponse.status === 401) {
+                console.warn('[AuthContext] Clearing invalid admin token');
+                document.cookie = 'adminToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                setAdmin(null);
+                // Don't redirect here, let the page handle it
+              }
+            }
+          } catch (error) {
+            console.warn('[AuthContext] Admin auth check error:', error);
+            // Don't clear state on network errors
+          }
         }
       } catch (error) {
-        console.error('Auth check error:', error)
-        setUser(null)
+        console.error('[AuthContext] Auth check error:', error);
+        // Don't clear states on network errors
+        if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+          console.warn('[AuthContext] Network error during auth check - maintaining current state');
+          return;
+        }
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    checkAuth()
-  }, [])
+    checkAuth();
+  }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
@@ -112,11 +182,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setUser(data.user)
-      toast.success(`Welcome back, ${data.user.fullName || data.user.username}!`)
+      compatToast.success(`Welcome back, ${data.user.fullName || data.user.username}!`)
       return true
     } catch (error: any) {
       console.error('Login error:', error)
-      toast.error(error.message || 'Login failed')
+      compatToast.error(error.message || 'Login failed')
       return false
     } finally {
       setIsLoading(false)
@@ -148,11 +218,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setAdmin(data.admin)
-      toast.success(`Welcome back, ${data.admin.fullName}!`)
+      compatToast.success(`Welcome back, ${data.admin.fullName}!`)
       return true
     } catch (error: any) {
       console.error('Admin login error:', error)
-      toast.error(error.message || 'Admin login failed')
+      compatToast.error(error.message || 'Admin login failed')
       return false
     } finally {
       setIsLoading(false)
@@ -178,10 +248,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.push('/login')
       router.refresh() // Force a full page refresh
       
-      toast.success('Logged out successfully')
+      compatToast.success('Logged out successfully')
     } catch (error) {
       console.error('Logout error:', error)
-      toast.error('Failed to logout')
+      compatToast.error('Failed to logout')
     }
   }
 
@@ -203,10 +273,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.push('/admin/login')
       router.refresh() // Force a full page refresh
       
-      toast.success('Admin logged out successfully')
+      compatToast.success('Admin logged out successfully')
     } catch (error) {
       console.error('Admin logout error:', error)
-      toast.error('Failed to logout')
+      compatToast.error('Failed to logout')
     }
   }
 

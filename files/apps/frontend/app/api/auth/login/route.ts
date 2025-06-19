@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { api } from '@/lib/api';
+import axios from 'axios';
 
 // Define allowed methods
 const allowedMethods = ['POST'];
+const API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
 
 export async function POST(request: Request) {
   try {
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
 
     // Check if this email exists in the admin-user collection (not allowed for user login)
     try {
-      const adminCheck = await api.get(`/admin-user-profiles?filters[email][$eq]=${encodeURIComponent(email)}`);
+      const adminCheck = await axios.get(`${API_URL}/api/admin-user-profiles?filters[email][$eq]=${encodeURIComponent(email)}`);
       if (adminCheck.data?.data?.length > 0) {
         return NextResponse.json(
           { error: 'This email is registered as an admin. Please use the admin login.' },
@@ -43,27 +44,61 @@ export async function POST(request: Request) {
     }
 
     // Log the request details (but not the password)
-    console.log('Login attempt:', {
+    console.log('[API/auth/login] Login attempt:', {
       email,
-      apiUrl: process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337',
+      apiUrl: API_URL,
       timestamp: new Date().toISOString()
     });
 
     // Attempt to login with Strapi
-    const response = await fetch(`${process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337'}/api/auth/local`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    try {
+      const response = await axios.post(`${API_URL}/api/auth/local`, {
         identifier: email,
         password,
-      }),
-    });
+      });
 
-    const data = await response.json();
+      const data = response.data;
 
-    if (!response.ok) {
+      if (!data.jwt || !data.user) {
+        console.error('[API/auth/login] Invalid response from Strapi:', data);
+        return NextResponse.json(
+          { error: 'Invalid response from authentication server' },
+          { status: 500 }
+        );
+      }
+
+      console.log('[API/auth/login] Login successful for:', email);
+
+      // Set the JWT token in an HTTP-only cookie
+      cookies().set('userToken', data.jwt, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 30 * 24 * 60 * 60 // 30 days
+      });
+
+      // Set additional readable cookie for client side
+      cookies().set('clientUserToken', data.jwt, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 30 * 24 * 60 * 60
+      });
+
+      // Return user data without sensitive information
+      return NextResponse.json({
+        user: {
+          id: data.user.id,
+          email: data.user.email,
+          username: data.user.username,
+          fullName: data.user.fullName || data.user.username,
+          role: data.user.role?.type || 'authenticated',
+          subscriptionStatus: data.user.subscriptionStatus || 'free'
+        }
+      });
+    } catch (strapiError: any) {
       // Clear any existing token on authentication failure
       cookies().set('userToken', '', {
         httpOnly: true,
@@ -72,56 +107,31 @@ export async function POST(request: Request) {
         path: '/',
         maxAge: 0
       });
-
-      console.error('Login error:', {
-        status: response.status,
-        error: data.error?.message || 'Authentication failed'
+      
+      cookies().set('clientUserToken', '', {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 0
       });
 
+      console.error('[API/auth/login] Strapi login error:', {
+        status: strapiError.response?.status,
+        data: strapiError.response?.data,
+        message: strapiError.message
+      });
+
+      const errorMessage = strapiError.response?.data?.error?.message || 'Authentication failed';
+      const statusCode = strapiError.response?.status || 401;
+
       return NextResponse.json(
-        { error: data.error?.message || 'Authentication failed' },
-        { status: response.status }
+        { error: errorMessage },
+        { status: statusCode }
       );
     }
-
-    if (!data.jwt || !data.user) {
-      return NextResponse.json(
-        { error: 'Invalid response from authentication server' },
-        { status: 500 }
-      );
-    }
-
-    // Set the JWT token in an HTTP-only cookie
-    cookies().set('userToken', data.jwt, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 30 * 24 * 60 * 60 // 30 days
-    });
-
-    // Set additional readable cookie for client side
-    cookies().set('clientUserToken', data.jwt, {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 30 * 24 * 60 * 60
-    });
-
-    // Return user data without sensitive information
-    return NextResponse.json({
-      user: {
-        id: data.user.id,
-        email: data.user.email,
-        username: data.user.username,
-        fullName: data.user.fullName || data.user.username,
-        role: data.user.role?.type || 'authenticated',
-        subscriptionStatus: data.user.subscriptionStatus || 'free'
-      }
-    });
   } catch (error: any) {
-    console.error('User login error:', error);
+    console.error('[API/auth/login] Unexpected error:', error);
     return NextResponse.json(
       { error: 'Authentication failed. Please try again.' },
       { status: 500 }

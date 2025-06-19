@@ -13,7 +13,7 @@ import {
   EyeIcon,
   EyeSlashIcon
 } from '@heroicons/react/24/outline'
-import toast from 'react-hot-toast'
+import compatToast from '@/lib/notificationManager';
 
 export default function LoginPage() {
   const router = useRouter()
@@ -21,24 +21,30 @@ export default function LoginPage() {
   const { login, setUser } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   })
 
-  const returnTo = searchParams.get('returnTo') || '/user/dashboard'
+  const returnTo = searchParams.get('returnTo') || searchParams.get('from') || '/user/games'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    // Reset error state
+    setErrorMessage(null)
+    
     if (!formData.email || !formData.password) {
-      toast.error('Please fill in all fields')
+      setErrorMessage('Please fill in all fields')
+      compatToast.error('Please fill in all fields')
       return
     }
 
     setIsLoading(true)
 
     try {
+      // Direct API call instead of using auth context login
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -48,14 +54,14 @@ export default function LoginPage() {
           email: formData.email,
           password: formData.password,
         }),
+        credentials: 'include'
       })
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Login failed')
-      }
-
       const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Login failed')
+      }
       
       if (!data.user) {
         throw new Error('Invalid response from server')
@@ -63,15 +69,20 @@ export default function LoginPage() {
 
       // Set the user in the auth context and redirect
       setUser(data.user)
-      toast.success(`Welcome back, ${data.user.fullName || data.user.username}!`)
-      router.push(returnTo)
+      compatToast.success(`Welcome back, ${data.user.fullName || data.user.username}!`)
+      
+      // Small delay to allow the toast to show
+      setTimeout(() => {
+        router.push(returnTo)
+      }, 300)
     } catch (error: any) {
       console.error('Login error:', error)
-      const errorMessage = error.message || 'Login failed. Please try again.'
-      toast.error(errorMessage)
+      const errorMsg = error.message || 'Login failed. Please try again.'
+      setErrorMessage(errorMsg)
+      compatToast.error(errorMsg)
       
       // If the error is related to invalid credentials, clear the password field
-      if (errorMessage.toLowerCase().includes('invalid') || errorMessage.toLowerCase().includes('incorrect')) {
+      if (errorMsg.toLowerCase().includes('invalid') || errorMsg.toLowerCase().includes('incorrect')) {
         setFormData(prev => ({ ...prev, password: '' }))
       }
     } finally {
@@ -98,6 +109,12 @@ export default function LoginPage() {
 
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back!</h1>
         <p className="text-gray-600 mb-8">Please sign in to continue playing.</p>
+
+        {errorMessage && (
+          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
+            <p>{errorMessage}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
