@@ -65,8 +65,8 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Set the auth tokens as HTTP-only cookies
-    response.cookies.set('adminAccessToken', token, {
+    // Set the auth tokens as HTTP-only cookies matching tokenManager expectations
+    response.cookies.set('adminToken', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (refreshToken) {
+      // HTTP-only server cookie for admin refresh token
       response.cookies.set('adminRefreshToken', refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -81,6 +82,14 @@ export async function POST(request: NextRequest) {
         path: '/'
       })
     }
+
+    // Client-accessible cookie for frontend auth context
+    response.cookies.set('clientAdminToken', token, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/'
+    })
 
     return response
   } catch (error: any) {
