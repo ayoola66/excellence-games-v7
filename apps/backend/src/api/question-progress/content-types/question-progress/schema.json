@@ -1,0 +1,51 @@
+{
+  "kind": "collectionType",
+  "collectionName": "question_progresses",
+  "info": {
+    "singularName": "question-progress",
+    "pluralName": "question-progresses",
+    "displayName": "Question Progress",
+    "description": "Tracks user progress through game questions"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "game": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::game.game"
+    },
+    "question": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::question.question"
+    },
+    "category": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::category.category"
+    },
+    "isAnswered": {
+      "type": "boolean",
+      "default": false
+    },
+    "isCorrect": {
+      "type": "boolean",
+      "default": false
+    },
+    "attempts": {
+      "type": "integer",
+      "min": 0,
+      "default": 0
+    },
+    "lastAttemptAt": {
+      "type": "datetime"
+    }
+  }
+} 

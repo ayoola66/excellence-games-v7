@@ -1,0 +1,11 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Run structure enforcement check
+node scripts/enforce-structure.js
+
+# If structure check fails, prevent commit
+if [ $? -ne 0 ]; then
+  echo "❌ Project structure validation failed. Please fix the issues before committing."
+  exit 1
+fi 

@@ -1,0 +1,1 @@
+Current state with all authentication fixes from June 23, 2025 session

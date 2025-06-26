@@ -1,11 +1,19 @@
 {
-  "devDependencies": {
-    "@playwright/test": "^1.52.0",
-    "@types/node": "^22.15.29",
-    "concurrently": "^9.1.2"
+  "name": "targeted",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "start:backend": "./scripts/start-backend.sh",
+    "start:frontend": "./scripts/start-frontend.sh",
+    "start:dev": "./scripts/start-dev.sh",
+    "test:e2e": "cd tests/e2e && npx playwright test",
+    "test:e2e:ui": "cd tests/e2e && npx playwright test --ui",
+    "test:e2e:report": "cd tests/e2e && npx playwright show-report"
   },
-  "dependencies": {
-    "axios": "^1.9.0",
-    "strapi": "^3.6.11"
+  "devDependencies": {
+    "@playwright/test": "^1.40.1",
+    "@types/node": "^20.10.4"
   }
 }
