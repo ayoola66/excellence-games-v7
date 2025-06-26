@@ -1,138 +1,97 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { adminLoginRateLimiter } from '@/lib/middleware/rateLimiter'
-import { validateEmail } from '@/lib/auth/securityUtils'
-import { setAdminAuthTokens } from '@/lib/auth/tokenManager'
-import { AuthError, AuthErrorType, logAuthError } from '@/lib/errors/authErrors'
+import { cookies } from 'next/headers'
 
 const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337'
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    // Apply rate limiting
-    const rateLimitResult = await adminLoginRateLimiter(req)
-    if (rateLimitResult) {
-      return rateLimitResult
-    }
+    const { email, password } = await request.json()
 
-    // Parse request body
-    const body = await req.json()
-    const { email, password } = body
-
-    // Validate input
     if (!email || !password) {
-      throw new AuthError(AuthErrorType.INVALID_REQUEST, {
-        message: 'Email and password are required'
-      })
-    }
-
-    // Validate email format
-    if (!validateEmail(email)) {
-      throw new AuthError(AuthErrorType.INVALID_REQUEST, {
-        message: 'Invalid email format'
-      })
-    }
-
-    console.log(`[AUTH] Admin login attempt for: ${email}`)
-
-    try {
-      // Use the correct admin login endpoint
-      const response = await fetch(`${strapiUrl}/api/admin-user/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email,
-          password
-        })
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new AuthError(
-          response.status === 401 ? AuthErrorType.INVALID_CREDENTIALS : AuthErrorType.SERVER_ERROR,
-          {
-            message: data?.error || 'Authentication failed'
-          }
-        )
-      }
-
-      const token = data?.data?.token
-      const adminData = data?.data?.admin
-
-      if (!token || !adminData) {
-        throw new AuthError(AuthErrorType.SERVER_ERROR, {
-          message: 'Invalid response from authentication server'
-        })
-      }
-
-      // Create response object
-      const nextResponse = NextResponse.json({ admin: adminData })
-
-      // Set authentication tokens
-      setAdminAuthTokens(nextResponse, {
-        accessToken: token,
-        refreshToken: token + '_refresh' // Simple refresh token for now
-      })
-
-      // Log successful login
-      console.log(`[AUTH] Admin login successful: ${email}`)
-
-      return nextResponse
-    } catch (error: any) {
-      // Handle authentication errors
-      if (error instanceof AuthError) {
-        logAuthError(error, { path: '/api/auth/admin/login' })
-        return NextResponse.json(
-          { error: error.toJSON().error },
-          { status: error.status }
-        )
-      }
-
-      // Handle network errors
-      if (error.message && error.message.includes('fetch')) {
-        return NextResponse.json(
-          { 
-            error: {
-              type: AuthErrorType.NETWORK_ERROR,
-              message: 'Could not connect to authentication server'
-            }
-          },
-          { status: 503 }
-        )
-      }
-
-      // Handle other errors
-      console.error('[AUTH] Unexpected error:', error)
       return NextResponse.json(
-        { 
-          error: {
-            type: AuthErrorType.SERVER_ERROR,
-            message: 'An unexpected error occurred'
-          }
-        },
+        { error: { type: 'VALIDATION_ERROR', message: 'Email and password are required' } },
+        { status: 400 }
+      )
+    }
+
+    console.log(`Attempting to login admin user: ${email} to ${strapiUrl}/api/admin-user/auth/login`)
+
+    // Use the correct admin login endpoint
+    const loginResponse = await fetch(`${strapiUrl}/api/admin-user/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password }),
+      cache: 'no-store'
+    })
+
+    if (!loginResponse.ok) {
+      const errorData = await loginResponse.json()
+      console.error('Login failed:', {
+        status: loginResponse.status,
+        statusText: loginResponse.statusText,
+        error: errorData
+      })
+      return NextResponse.json(
+        { error: { type: 'AUTH_ERROR', message: errorData.error?.message || 'Failed to authenticate' } },
+        { status: loginResponse.status }
+      )
+    }
+
+    const responseData = await loginResponse.json()
+    const { jwt: token, refreshToken, user: adminUser } = responseData
+
+    if (!token || !adminUser) {
+      console.error('Invalid response data:', responseData)
+      return NextResponse.json(
+        { error: { type: 'SERVER_ERROR', message: 'Invalid response from authentication server' } },
         { status: 500 }
       )
     }
-  } catch (error: any) {
-    // Handle outer errors
-    console.error('[AUTH] Outer error:', error)
 
-    if (error instanceof AuthError) {
-      logAuthError(error, { path: '/api/auth/admin/login' })
-      return NextResponse.json(
-        { error: error.toJSON().error },
-        { status: error.status }
-      )
+    // Create the response with auth tokens
+    const response = NextResponse.json({
+      success: true,
+      admin: {
+        id: adminUser.id,
+        email: adminUser.email,
+        fullName: adminUser.fullName,
+        role: adminUser.role,
+        displayRole: adminUser.displayRole,
+        badge: adminUser.badge,
+        permissions: adminUser.permissions,
+        allowedSections: adminUser.allowedSections
+      }
+    })
+
+    // Set the auth tokens as HTTP-only cookies
+    response.cookies.set('adminAccessToken', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/'
+    })
+
+    if (refreshToken) {
+      response.cookies.set('adminRefreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/'
+      })
     }
 
+    return response
+  } catch (error: any) {
+    console.error('Admin login error:', error)
     return NextResponse.json(
       { 
-        error: {
-          type: AuthErrorType.SERVER_ERROR,
-          message: 'An unexpected error occurred'
-        }
+        error: { 
+          type: 'SERVER_ERROR', 
+          message: 'An unexpected error occurred',
+          details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        } 
       },
       { status: 500 }
     )

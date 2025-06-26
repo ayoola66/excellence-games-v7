@@ -1,16 +1,65 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
+export const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337'
+
+export const apiEndpoints = {
+  auth: {
+    adminLogin: `${strapiUrl}/admin/login`,
+    adminMe: `${strapiUrl}/api/admin-users/me`,
+    adminUpdate: (id: number) => `${strapiUrl}/api/admin-users/${id}`,
+    userLogin: `${strapiUrl}/api/auth/local`,
+    userRegister: `${strapiUrl}/api/auth/local/register`,
+    userMe: `${strapiUrl}/api/users/me`,
+  },
+  games: {
+    list: `${strapiUrl}/api/games`,
+    detail: (id: number) => `${strapiUrl}/api/games/${id}`,
+    questions: (id: number) => `${strapiUrl}/api/games/${id}/questions`,
+  },
+  categories: {
+    list: `${strapiUrl}/api/categories`,
+    detail: (id: number) => `${strapiUrl}/api/categories/${id}`,
+  },
+  questions: {
+    list: `${strapiUrl}/api/questions`,
+    detail: (id: number) => `${strapiUrl}/api/questions/${id}`,
+    import: `${strapiUrl}/api/questions/import`,
+  },
+  users: {
+    list: `${strapiUrl}/api/users`,
+    detail: (id: number) => `${strapiUrl}/api/users/${id}`,
+    stats: (id: number) => `${strapiUrl}/api/users/${id}/stats`,
+  },
+  music: {
+    list: `${strapiUrl}/api/background-music`,
+    detail: (id: number) => `${strapiUrl}/api/background-music/${id}`,
+    userMusic: `${strapiUrl}/api/user-music`,
+  },
+  orders: {
+    list: `${strapiUrl}/api/orders`,
+    detail: (id: number) => `${strapiUrl}/api/orders/${id}`,
+    create: `${strapiUrl}/api/orders`,
+  },
+  products: {
+    list: `${strapiUrl}/api/products`,
+    detail: (id: number) => `${strapiUrl}/api/products/${id}`,
+  },
+  analytics: {
+    dashboard: `${strapiUrl}/api/analytics/dashboard`,
+    userStats: `${strapiUrl}/api/analytics/user-stats`,
+    gameStats: `${strapiUrl}/api/analytics/game-stats`,
+  }
+}
 
 // Regular API instance for user routes
 export const api = axios.create({
-  baseURL: API_URL,
+  baseURL: strapiUrl,
   withCredentials: true
 });
 
 // Separate API instance for admin routes
 export const strapiApi = axios.create({
-  baseURL: API_URL,
+  baseURL: strapiUrl,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -100,7 +149,7 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
       ...options.headers,
     };
     
-    const response = await fetch(`${API_URL}${url}`, {
+    const response = await fetch(`${strapiUrl}${url}`, {
       ...options,
       headers,
       credentials: 'include',

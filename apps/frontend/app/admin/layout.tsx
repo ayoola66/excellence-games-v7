@@ -1,5 +1,7 @@
 "use client"
 
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import DashboardLayout from '@/components/layouts/DashboardLayout'
@@ -10,12 +12,27 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
+  const router = useRouter()
   const { admin, isLoading } = useAuth()
 
+  useEffect(() => {
+    // If not loading and no admin, redirect to login
+    if (!isLoading && !admin) {
+      router.replace('/admin/login')
+    }
+  }, [isLoading, admin, router])
+
+  // Show loading while checking auth
   if (isLoading) {
-    return <FullPageLoading message="Loading..." />
+    return <FullPageLoading message="Verifying admin access..." />
   }
 
+  // If no admin and not loading, don't render anything
+  if (!admin) {
+    return null
+  }
+
+  // Only render admin content if authenticated
   return (
     <ErrorBoundary>
       <DashboardLayout>

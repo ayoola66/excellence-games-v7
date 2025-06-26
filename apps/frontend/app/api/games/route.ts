@@ -4,6 +4,10 @@ import { cookies } from 'next/headers';
 
 const API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
 
+// Export the route handler
+export const dynamic = 'force-dynamic'; // Disable static optimization
+export const revalidate = 0; // Disable caching
+
 export async function GET(request: NextRequest) {
   try {
     // 1. Token Validation - Fail fast if no token
@@ -41,11 +45,19 @@ export async function GET(request: NextRequest) {
           'Content-Type': 'application/json'
         }
       });
+
+      if (!strapiResponse.data) {
+        throw new Error('No data received from Strapi');
+      }
+
+      console.log('[API/games] Successfully fetched games:', strapiResponse.data);
+      return NextResponse.json(strapiResponse.data);
     } catch (strapiError: any) {
       console.error('[API/games] Strapi request failed:', {
         message: strapiError.message,
         status: strapiError.response?.status,
-        data: strapiError.response?.data
+        data: strapiError.response?.data,
+        url: `${API_URL}/api/games`
       });
 
       if (strapiError.response?.status === 401) {
@@ -62,10 +74,15 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      throw strapiError; // Re-throw to be caught by outer catch
+      // Return a more specific error message
+      return NextResponse.json(
+        { 
+          error: 'Failed to fetch games from the database',
+          details: process.env.NODE_ENV === 'development' ? strapiError.message : undefined
+        },
+        { status: strapiError.response?.status || 500 }
+      );
     }
-
-    return NextResponse.json(strapiResponse.data);
   } catch (error: any) {
     console.error('[API/games] Unhandled error:', {
       message: error.message,
@@ -76,7 +93,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(
       { 
-        error: 'Failed to fetch games',
+        error: 'Failed to fetch games from the database',
         details: process.env.NODE_ENV === 'development' ? error.message : undefined
       },
       { status: 500 }

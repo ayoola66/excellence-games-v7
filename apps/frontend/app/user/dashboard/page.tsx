@@ -24,7 +24,7 @@ interface UserStats {
   averageScore: number
 }
 
-function UserDashboardContent() {
+export default function UserDashboard() {
   const router = useRouter()
   const { user, isLoading: authLoading, authError } = useAuth()
   const [recentGames, setRecentGames] = useState<Game[]>([])
@@ -39,15 +39,19 @@ function UserDashboardContent() {
   const [statsWarning, setStatsWarning] = useState<string | null>(null)
 
   useEffect(() => {
-    if (user) {
-      console.log('[UserDashboard] User authenticated, fetching data')
-      fetchDashboardData()
-    } else {
-      console.warn('[UserDashboard] Rendered without a user. ProtectedLayout should have redirected.')
-      setError("Could not verify user information. Please try logging in again.")
-      setLoading(false)
+    if (authLoading) {
+      return // Wait for auth to complete
     }
-  }, [user])
+
+    if (!user) {
+      console.warn('[UserDashboard] No user found, redirecting to login')
+      router.push('/login')
+      return
+    }
+
+    console.log('[UserDashboard] User authenticated, fetching data')
+    fetchDashboardData()
+  }, [user, authLoading])
 
   async function fetchDashboardData() {
     setError(null)
@@ -61,7 +65,9 @@ function UserDashboardContent() {
         ?.split('=')[1]
 
       if (!token) {
-        throw new Error('Authentication token not found')
+        console.error('[UserDashboard] No auth token found')
+        router.push('/login')
+        return
       }
 
       // Log masked token for debugging
@@ -72,7 +78,8 @@ function UserDashboardContent() {
       const gamesRes = await fetch("/api/games", {
         credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache'
         },
         cache: 'no-store'
       })
@@ -117,7 +124,8 @@ function UserDashboardContent() {
       const statsRes = await fetch("/api/user/stats", {
         credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache'
         },
         cache: 'no-store'
       })
@@ -139,11 +147,7 @@ function UserDashboardContent() {
     }
   }
 
-  if (!user) {
-    return <FullPageLoading message="Your session may have expired. Redirecting to login..." />
-  }
-
-  if (loading) {
+  if (authLoading || (loading && !error)) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
         <LoadingFallback message="Loading your dashboard..." />
@@ -198,7 +202,7 @@ function UserDashboardContent() {
         {statsWarning && (
           <div className="flex items-centre mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
             <span className="text-yellow-600 font-medium mr-2">⚠️</span>
-            <span className="text-yellow-700">{statsWarning}</span>
+            <p className="text-yellow-700">{statsWarning}</p>
           </div>
         )}
       </div>
@@ -265,6 +269,4 @@ function UserDashboardContent() {
       </div>
     </div>
   )
-}
-
-export default UserDashboardContent 
+} 

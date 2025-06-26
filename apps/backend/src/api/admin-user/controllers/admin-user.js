@@ -1,14 +1,13 @@
 'use strict';
 
-const { createCoreController } = require('@strapi/strapi').factories;
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-module.exports = createCoreController('api::admin-user.admin-user', ({ strapi }) => ({
+module.exports = {
   async find(ctx) {
     try {
       const admins = await strapi.db.query('api::admin-user.admin-user').findMany({
-        select: ['id', 'email', 'fullName', 'adminType', 'badge', 'isActive', 'lastLogin'],
+        select: ['id', 'email', 'fullName', 'role', 'displayRole', 'badge', 'isActive', 'lastLogin'],
       });
       return { data: admins };
     } catch (error) {
@@ -22,7 +21,7 @@ module.exports = createCoreController('api::admin-user.admin-user', ({ strapi })
       const { id } = ctx.params;
       const admin = await strapi.db.query('api::admin-user.admin-user').findOne({
         where: { id },
-        select: ['id', 'email', 'fullName', 'adminType', 'badge', 'isActive', 'lastLogin'],
+        select: ['id', 'email', 'fullName', 'role', 'displayRole', 'badge', 'isActive', 'lastLogin'],
       });
 
       if (!admin) {
@@ -38,9 +37,9 @@ module.exports = createCoreController('api::admin-user.admin-user', ({ strapi })
 
   async create(ctx) {
     try {
-      const { email, password, fullName, adminType, badge } = ctx.request.body;
+      const { email, password, fullName, role, displayRole, badge } = ctx.request.body;
 
-      if (!email || !password || !fullName || !adminType || !badge) {
+      if (!email || !password || !fullName || !role || !displayRole || !badge) {
         return ctx.badRequest('Missing required fields');
       }
 
@@ -50,9 +49,12 @@ module.exports = createCoreController('api::admin-user.admin-user', ({ strapi })
           email,
           password: hashedPassword,
           fullName,
-          adminType,
+          role,
+          displayRole,
           badge,
           isActive: true,
+          permissions: {}, // Will be set based on role
+          allowedSections: [], // Will be set based on role
         },
       });
 
@@ -61,7 +63,8 @@ module.exports = createCoreController('api::admin-user.admin-user', ({ strapi })
           id: admin.id,
           email: admin.email,
           fullName: admin.fullName,
-          adminType: admin.adminType,
+          role: admin.role,
+          displayRole: admin.displayRole,
           badge: admin.badge,
         },
       };
@@ -100,30 +103,42 @@ module.exports = createCoreController('api::admin-user.admin-user', ({ strapi })
         { 
           id: admin.id,
           email: admin.email,
-          adminType: admin.adminType
+          role: admin.role
         },
         process.env.JWT_SECRET || 'your-jwt-secret',
         { expiresIn: '8h' }
       );
 
+      // Generate refresh token
+      const refreshToken = jwt.sign(
+        { id: admin.id },
+        process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
+        { expiresIn: '7d' }
+      );
+
       // Update last login
       await strapi.db.query('api::admin-user.admin-user').update({
         where: { id: admin.id },
-        data: { lastLogin: new Date() }
+        data: {
+          lastLogin: new Date(),
+          lastLoginIP: ctx.request.ip,
+          sessionToken: token
+        }
       });
 
       return {
-        data: {
-          token,
-          admin: {
-            id: admin.id,
-            email: admin.email,
-            fullName: admin.fullName,
-            adminType: admin.adminType,
-            badge: admin.badge,
-            permissions: admin.permissions,
-          },
-        },
+        jwt: token,
+        refreshToken,
+        user: {
+          id: admin.id,
+          email: admin.email,
+          fullName: admin.fullName,
+          role: admin.role,
+          displayRole: admin.displayRole,
+          badge: admin.badge,
+          permissions: admin.permissions,
+          allowedSections: admin.allowedSections
+        }
       };
     } catch (error) {
       console.error('Admin login error:', error);
@@ -154,17 +169,17 @@ module.exports = createCoreController('api::admin-user.admin-user', ({ strapi })
         }
 
         return {
-          data: {
-            admin: {
-              id: admin.id,
-              email: admin.email,
-              fullName: admin.fullName,
-              adminType: admin.adminType,
-              badge: admin.badge,
-              permissions: admin.permissions,
-            },
-            valid: true,
+          user: {
+            id: admin.id,
+            email: admin.email,
+            fullName: admin.fullName,
+            role: admin.role,
+            displayRole: admin.displayRole,
+            badge: admin.badge,
+            permissions: admin.permissions,
+            allowedSections: admin.allowedSections
           },
+          valid: true
         };
       } catch (error) {
         return ctx.unauthorized('Invalid token');
@@ -174,4 +189,4 @@ module.exports = createCoreController('api::admin-user.admin-user', ({ strapi })
       return ctx.internalServerError('Failed to verify session');
     }
   },
-})); 
+}; 

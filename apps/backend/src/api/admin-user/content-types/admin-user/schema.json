@@ -5,7 +5,7 @@
     "singularName": "admin-user",
     "pluralName": "admin-users",
     "displayName": "Admin User",
-    "description": "Admin user profiles with role-based permissions"
+    "description": "Admin user profiles with comprehensive RBAC permissions"
   },
   "options": {
     "draftAndPublish": false
@@ -18,41 +18,73 @@
       "unique": true
     },
     "password": {
-      "type": "text",
-      "required": true
+      "type": "password",
+      "required": true,
+      "private": true
     },
     "fullName": {
       "type": "string",
       "required": true
     },
-    "adminType": {
+    "role": {
+      "type": "enumeration",
+      "enum": ["super_admin", "dev_admin", "shop_admin", "content_admin", "customer_admin"],
+      "default": "customer_admin",
+      "required": true
+    },
+    "displayRole": {
       "type": "enumeration",
       "enum": ["SA", "DEV", "SH", "CT", "CS"],
-      "default": "CS",
       "required": true
     },
     "badge": {
-      "type": "string",
+      "type": "enumeration",
+      "enum": ["red", "black", "green", "purple", "orange"],
       "required": true
     },
     "permissions": {
       "type": "json",
+      "required": true,
       "description": "Role-based permissions matrix"
     },
     "isActive": {
       "type": "boolean",
-      "default": true
+      "default": true,
+      "required": true
     },
     "lastLogin": {
       "type": "datetime"
     },
+    "lastLoginIP": {
+      "type": "string"
+    },
     "sessionToken": {
-      "type": "text"
+      "type": "text",
+      "private": true
     },
     "profilePicture": {
       "type": "media",
       "multiple": false,
       "allowedTypes": ["images"]
+    },
+    "allowedSections": {
+      "type": "json",
+      "required": true,
+      "description": "List of dashboard sections this admin can access"
+    },
+    "auditLog": {
+      "type": "json",
+      "description": "Log of admin actions and changes"
+    },
+    "createdBy": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "admin::user"
+    },
+    "updatedBy": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "admin::user"
     }
   }
 }

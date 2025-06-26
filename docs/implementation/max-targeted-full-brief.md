@@ -86,11 +86,11 @@ A comprehensive trivia game platform where users play interactive question-based
 
 ## 👑 **ADMIN MANAGEMENT SYSTEM**
 
-### **Admin Hierarchy (High to Low Authority)**
+### **Admin Hierarchy (High to Low Authority) RBAC**
 
 #### **1. Super Admin (SA) - Highest Authority**
 - **Email**: `superadmin@targetedgames.com`
-- **Password**: `SuperAdmin2024!`
+- **Password**: Passw0rd
 - **Access**: Complete system control
 - **Badge**: Red "SA"
 - **Capabilities**: 
@@ -100,7 +100,7 @@ A comprehensive trivia game platform where users play interactive question-based
 
 #### **2. Dev Admin (DEV) - Development Administrator**
 - **Email**: `devadmin@targetedgames.com` 
-- **Password**: `DevAdmin2024!`
+- **Password**: Passw0rd
 - **Access**: Full development features
 - **Badge**: Black "DEV"
 - **Capabilities**:
@@ -114,19 +114,19 @@ A comprehensive trivia game platform where users play interactive question-based
 
 #### **3. Shop Admin (SH) - E-commerce Focus**
 - **Email**: `shopadmin@targetedgames.com`
-- **Password**: `ShopAdmin2024!`
+- **Password**: Passw0rd
 - **Badge**: Green "SH"
 - **Access**: Shop management, product catalog, inventory
 
 #### **4. Content Admin (CT) - Content Management**
 - **Email**: `contentadmin@targetedgames.com`
-- **Password**: `ContentAdmin2024!`
+- **Password**: Passw0rd
 - **Badge**: Purple "CT"  
 - **Access**: Trivia content creation, question management
 
 #### **5. Customer Admin (CS) - User Support**
 - **Email**: `customeradmin@targetedgames.com`
-- **Password**: `CustomerAdmin2024!`
+- **Password**: Passw0rd
 - **Badge**: Orange "CS"
 - **Access**: User management, support analytics
 

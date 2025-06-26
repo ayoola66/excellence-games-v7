@@ -2,70 +2,86 @@
 
 import React, { createContext, useContext, useEffect, useState, type ReactNode, useRef } from 'react'
 import { FullPageLoading } from '@/components/ui/LoadingFallback'
+import type { AdminUser } from '@/types/admin'
 
 interface User {
-  id: string
+  id: number
   email: string
   username: string
   fullName?: string
   role?: string
+  isActive: boolean
+  isPremium: boolean
   subscriptionStatus?: string
-}
-
-interface Admin {
-  id: string
-  email: string
-  fullName?: string
-  adminType: string
-  permissions: string[]
 }
 
 interface AuthContextType {
   user: User | null
-  admin: Admin | null
+  admin: AdminUser | null
   isLoading: boolean
+  error: string | null
   authError: string | null
   setUser: (user: User | null) => void
-  setAdmin: (admin: Admin | null) => void
-  refreshAuth: () => Promise<void>
+  setAdmin: (admin: AdminUser | null) => void
+  setError: (error: string | null) => void
   clearAuthError: () => void
+  refreshAuth: () => Promise<void>
   logout: () => Promise<void>
+  adminLogout: () => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+export const AuthContext = createContext<AuthContextType>({
+  user: null,
+  admin: null,
+  isLoading: true,
+  error: null,
+  authError: null,
+  setUser: () => {},
+  setAdmin: () => {},
+  setError: () => {},
+  clearAuthError: () => {},
+  refreshAuth: async () => {},
+  logout: async () => {},
+  adminLogout: async () => {}
+})
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [admin, setAdmin] = useState<Admin | null>(null)
+  const [admin, setAdmin] = useState<AdminUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [authError, setAuthError] = useState<string | null>(null)
   const [hasInitialized, setHasInitialized] = useState(false)
   const isChecking = useRef(false)
 
-  const clearAuthError = () => setAuthError(null)
+  const clearAuthError = () => {
+    setError(null)
+    setAuthError(null)
+  }
 
   const logout = async () => {
     try {
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
-      
-      if (response.ok) {
-        setUser(null);
-        setAdmin(null);
-        // Clear tokens
-        document.cookie = 'clientUserToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        document.cookie = 'clientAdminToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      } else {
-        console.error('Logout failed:', response.status);
-        throw new Error('Logout failed');
-      }
+      await fetch('/api/auth/logout', { method: 'POST' })
+      setUser(null)
+      setError(null)
+      window.location.href = '/login'
     } catch (error) {
-      console.error('Logout error:', error);
-      throw error;
+      console.error('Logout error:', error)
+      setError('Failed to logout')
     }
-  };
+  }
+
+  const adminLogout = async () => {
+    try {
+      await fetch('/api/auth/admin/logout', { method: 'POST' })
+      setAdmin(null)
+      setError(null)
+      window.location.href = '/admin/login'
+    } catch (error) {
+      console.error('Admin logout error:', error)
+      setError('Failed to logout')
+    }
+  }
 
   // Only check auth once on mount
   useEffect(() => {
@@ -109,19 +125,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               } else {
                 console.warn('[AuthContext] Admin auth response missing admin data')
                 document.cookie = 'clientAdminToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-                setAuthError('Admin session invalid. Please login again.')
+                setError('Admin session invalid. Please login again.')
               }
             } else if (response.status === 401) {
               console.warn('[AuthContext] Admin auth failed: Unauthorized')
               document.cookie = 'clientAdminToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-              setAuthError('Admin session expired. Please login again.')
+              setError('Admin session expired. Please login again.')
             } else {
               console.error('[AuthContext] Admin auth check failed with status:', response.status)
-              setAuthError('Failed to verify admin session. Please try again.')
+              setError('Failed to verify admin session. Please try again.')
             }
           } catch (error) {
             console.error('[AuthContext] Admin auth check failed:', error)
-            setAuthError('Network error checking admin session. Please try again.')
+            setError('Network error checking admin session. Please try again.')
           }
         } else if (!isAdminPath && hasUserToken) {
           console.log('[AuthContext] Checking user auth')
@@ -140,24 +156,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               } else {
                 console.warn('[AuthContext] User auth response missing user data')
                 document.cookie = 'clientUserToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-                setAuthError('User session invalid. Please login again.')
+                setError('User session invalid. Please login again.')
               }
             } else if (response.status === 401) {
               console.warn('[AuthContext] User auth failed: Unauthorized')
               document.cookie = 'clientUserToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-              setAuthError('User session expired. Please login again.')
+              setError('User session expired. Please login again.')
             } else {
               console.error('[AuthContext] User auth check failed with status:', response.status)
-              setAuthError('Failed to verify user session. Please try again.')
+              setError('Failed to verify user session. Please try again.')
             }
           } catch (error) {
             console.error('[AuthContext] User auth check failed:', error)
-            setAuthError('Network error checking user session. Please try again.')
+            setError('Network error checking user session. Please try again.')
           }
         }
       } catch (error) {
         console.error('[AuthContext] Auth check error:', error)
-        setAuthError('Error checking authentication. Please try again.')
+        setError('Error checking authentication. Please try again.')
       } finally {
         setIsLoading(false)
         setHasInitialized(true)
@@ -185,7 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     console.log('[AuthContext] Manual refresh triggered')
     setIsLoading(true)
-    setAuthError(null)
+    setError(null)
     setHasInitialized(false)
     
     // Small delay to ensure tokens are set
@@ -216,17 +232,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      admin, 
-      isLoading, 
-      authError,
-      setUser, 
-      setAdmin, 
-      refreshAuth,
-      clearAuthError,
-      logout
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        admin,
+        isLoading,
+        error,
+        authError,
+        setUser,
+        setAdmin,
+        setError,
+        clearAuthError,
+        refreshAuth,
+        logout,
+        adminLogout
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

@@ -112,8 +112,10 @@ export function UserLoginForm() {
       console.log('[UserLogin] Login response status:', response.status)
       
       if (!response.ok) {
-        handleLoginError(data.error);
-        if (data.error?.type === 'INVALID_CREDENTIALS') setFormData(prev => ({ ...prev, password: '' }));
+        handleLoginError(data.error)
+        if (data.error?.type === 'INVALID_CREDENTIALS') {
+          setFormData(prev => ({ ...prev, password: '' }))
+        }
         throw new Error(data.error?.message || 'Login failed')
       }
       
@@ -125,7 +127,7 @@ export function UserLoginForm() {
         throw new Error('Invalid response from server')
       }
 
-      // Set redirecting state
+      // Set redirecting state before showing toast
       setIsRedirecting(true)
 
       showToast({
@@ -136,15 +138,21 @@ export function UserLoginForm() {
       
       console.log('[UserLogin] Login successful, refreshing auth state')
       
-      // This will trigger the AuthProvider to show a loading state and re-check auth
-      await refreshAuth()
-      
-      // Redirect to the user's dashboard after successful login
-      // If you are not redirected, check for errors in the browser console or network tab.
-      // Ensure the login API returns a user object on success (data.user).
-      // Check for any errors in the terminal/server logs.
-      console.log('[UserLogin] Redirecting to dashboard')
-      router.push('/user/dashboard')
+      try {
+        // This will trigger the AuthProvider to show a loading state and re-check auth
+        await refreshAuth()
+        
+        // Redirect to the user's dashboard after successful login
+        console.log('[UserLogin] Redirecting to dashboard')
+        router.push('/user/dashboard')
+      } catch (refreshError) {
+        console.error('[UserLogin] Error refreshing auth state:', refreshError)
+        setErrors({
+          ...errors,
+          general: 'Login successful but failed to update session. Please try again.'
+        })
+        setIsRedirecting(false)
+      }
     } catch (error: any) {
       console.error('[UserLogin] Login error:', error)
       const errorMessage = errors.general || error.message || 'An error occurred during login'
@@ -153,12 +161,9 @@ export function UserLoginForm() {
         message: errorMessage,
         type: 'error'
       })
+      setIsRedirecting(false)
     } finally {
       setIsLoading(false)
-      if (isRedirecting) {
-        // If we were redirecting but hit an error, reset the state
-        setTimeout(() => setIsRedirecting(false), 1000)
-      }
     }
   }
 

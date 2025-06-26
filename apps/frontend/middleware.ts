@@ -1,56 +1,41 @@
-import { NextResponse, NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { adminAuthMiddleware } from './middleware/adminAuth'
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-  
-  // Get tokens from cookies
-  const userToken = request.cookies.get('clientUserToken')?.value || ''
-  const adminToken = request.cookies.get('clientAdminToken')?.value || ''
-
-  console.log(`[Middleware] Path: ${pathname} UserToken: ${!!userToken} AdminToken: ${!!adminToken}`)
-
-  // Skip middleware for debug route
-  if (pathname.startsWith('/debug')) {
+export async function middleware(request: NextRequest) {
+  // Skip middleware for API routes that handle their own auth
+  if (request.nextUrl.pathname.startsWith('/api/auth')) {
     return NextResponse.next()
   }
 
-  // Define protected routes
-  const isAdminRoute = pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')
-  const isUserRoute = pathname.startsWith('/user')
-  const isProtectedRoute = pathname.startsWith('/(protected)')
+  // Handle admin routes
+  if (request.nextUrl.pathname.startsWith('/admin')) {
+    return adminAuthMiddleware(request)
+  }
 
-  // Admin route protection
-  if (isAdminRoute) {
-    if (!adminToken) {
-      return NextResponse.redirect(new URL('/admin/login', request.url))
+  // Handle protected API routes
+  if (request.nextUrl.pathname.startsWith('/api')) {
+    const authToken = request.cookies.get('clientUserToken')?.value
+    if (!authToken) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in' },
+        { status: 401 }
+      )
     }
-  }
-
-  // User route protection
-  if (isUserRoute || isProtectedRoute) {
-    if (!userToken) {
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
-  }
-
-  // Redirect authenticated users away from login pages
-  if (pathname === '/login' && userToken) {
-    return NextResponse.redirect(new URL('/user/dashboard', request.url))
-  }
-
-  if (pathname === '/admin/login' && adminToken) {
-    return NextResponse.redirect(new URL('/admin/dashboard', request.url))
-  }
-
-  // Allow landing page to be visible
-  if (pathname === '/') {
-    if (adminToken) {
-      return NextResponse.redirect(new URL('/admin/dashboard', request.url))
-    } else if (userToken) {
-      return NextResponse.redirect(new URL('/user/dashboard', request.url))
-    }
-    // If no token, allow access to landing page
     return NextResponse.next()
+  }
+
+  // Handle protected user routes
+  if (
+    request.nextUrl.pathname.startsWith('/user') ||
+    request.nextUrl.pathname.startsWith('/game')
+  ) {
+    const authToken = request.cookies.get('clientUserToken')?.value
+    if (!authToken) {
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('redirect', request.nextUrl.pathname)
+      return NextResponse.redirect(loginUrl)
+    }
   }
 
   return NextResponse.next()
@@ -58,6 +43,9 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
+    '/admin/:path*',
+    '/user/:path*',
+    '/game/:path*',
+    '/api/:path*'
+  ]
 } 

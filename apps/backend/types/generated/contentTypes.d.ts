@@ -376,7 +376,7 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
 export interface ApiAdminUserAdminUser extends Struct.CollectionTypeSchema {
   collectionName: 'admin_user_profiles';
   info: {
-    description: 'Admin user profiles with role-based permissions';
+    description: 'Admin user profiles with comprehensive RBAC permissions';
     displayName: 'Admin User';
     pluralName: 'admin-users';
     singularName: 'admin-user';
@@ -385,30 +385,50 @@ export interface ApiAdminUserAdminUser extends Struct.CollectionTypeSchema {
     draftAndPublish: false;
   };
   attributes: {
-    adminType: Schema.Attribute.Enumeration<['SA', 'DEV', 'SH', 'CT', 'CS']> &
-      Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<'CS'>;
-    badge: Schema.Attribute.String & Schema.Attribute.Required;
+    allowedSections: Schema.Attribute.JSON & Schema.Attribute.Required;
+    auditLog: Schema.Attribute.JSON;
+    badge: Schema.Attribute.Enumeration<
+      ['red', 'black', 'green', 'purple', 'orange']
+    > &
+      Schema.Attribute.Required;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    displayRole: Schema.Attribute.Enumeration<['SA', 'DEV', 'SH', 'CT', 'CS']> &
+      Schema.Attribute.Required;
     email: Schema.Attribute.Email &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
     fullName: Schema.Attribute.String & Schema.Attribute.Required;
-    isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    isActive: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<true>;
     lastLogin: Schema.Attribute.DateTime;
+    lastLoginIP: Schema.Attribute.String;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::admin-user.admin-user'
     > &
       Schema.Attribute.Private;
-    password: Schema.Attribute.Text & Schema.Attribute.Required;
-    permissions: Schema.Attribute.JSON;
+    password: Schema.Attribute.Password &
+      Schema.Attribute.Required &
+      Schema.Attribute.Private;
+    permissions: Schema.Attribute.JSON & Schema.Attribute.Required;
     profilePicture: Schema.Attribute.Media<'images'>;
     publishedAt: Schema.Attribute.DateTime;
-    sessionToken: Schema.Attribute.Text;
+    role: Schema.Attribute.Enumeration<
+      [
+        'super_admin',
+        'dev_admin',
+        'shop_admin',
+        'content_admin',
+        'customer_admin',
+      ]
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'customer_admin'>;
+    sessionToken: Schema.Attribute.Text & Schema.Attribute.Private;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
