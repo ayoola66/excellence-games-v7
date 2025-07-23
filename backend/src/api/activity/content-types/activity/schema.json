@@ -1,0 +1,53 @@
+{
+  "kind": "collectionType",
+  "collectionName": "activities",
+  "info": {
+    "singularName": "activity",
+    "pluralName": "activities",
+    "displayName": "Activity",
+    "description": "User and admin activity tracking"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "type": {
+      "type": "enumeration",
+      "enum": [
+        "LOGIN",
+        "LOGOUT",
+        "GAME_START",
+        "GAME_END",
+        "PURCHASE",
+        "PROFILE_UPDATE",
+        "CONTENT_CREATE",
+        "CONTENT_UPDATE",
+        "CONTENT_DELETE",
+        "USER_MANAGEMENT",
+        "SYSTEM_CONFIG"
+      ],
+      "required": true
+    },
+    "details": {
+      "type": "json",
+      "description": "Additional activity details"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "activities"
+    },
+    "admin": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::platform-admin.platform-admin"
+    },
+    "ipAddress": {
+      "type": "string"
+    },
+    "userAgent": {
+      "type": "text"
+    }
+  }
+}

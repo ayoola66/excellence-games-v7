@@ -1,0 +1,47 @@
+{
+  "kind": "collectionType",
+  "collectionName": "music_uploads",
+  "info": {
+    "singularName": "music-upload",
+    "pluralName": "music-uploads",
+    "displayName": "Music Upload",
+    "description": "User music uploads and metadata"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "fileUrl": {
+      "type": "string",
+      "required": true
+    },
+    "fileSize": {
+      "type": "biginteger"
+    },
+    "duration": {
+      "type": "decimal"
+    },
+    "metadata": {
+      "type": "json"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "private": false
+    },
+    "createdAt": {
+      "type": "datetime"
+    },
+    "updatedAt": {
+      "type": "datetime"
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "kind": "collectionType",
+  "collectionName": "questions",
+  "info": {
+    "singularName": "question",
+    "pluralName": "questions",
+    "displayName": "Question",
+    "description": "Trivia questions for games"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "text": {
+      "type": "text",
+      "required": true
+    },
+    "options": {
+      "type": "json",
+      "required": true
+    },
+    "correctOption": {
+      "type": "integer",
+      "required": true,
+      "min": 0,
+      "max": 3
+    },
+    "cardNumber": {
+      "type": "integer",
+      "required": true,
+      "min": 1,
+      "max": 5
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "game": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::game.game",
+      "inversedBy": "questions"
+    },
+    "category": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::category.category",
+      "inversedBy": "questions"
+    }
+  }
+}

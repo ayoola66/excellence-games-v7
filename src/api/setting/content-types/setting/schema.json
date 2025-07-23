@@ -1,0 +1,36 @@
+{
+  "kind": "singleType",
+  "collectionName": "settings",
+  "info": {
+    "singularName": "setting",
+    "pluralName": "settings",
+    "displayName": "Setting",
+    "description": "Global settings and configurations for the application"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "application": {
+      "type": "json",
+      "required": true,
+      "private": false
+    },
+    "content": {
+      "type": "json",
+      "required": true,
+      "private": false
+    },
+    "media": {
+      "type": "json",
+      "required": true,
+      "private": false
+    },
+    "phase2_placeholder": {
+      "type": "json",
+      "private": false,
+      "comment": "Reserved for Phase 2 configurations"
+    }
+  }
+}

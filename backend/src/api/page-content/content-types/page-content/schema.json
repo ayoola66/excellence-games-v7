@@ -1,0 +1,54 @@
+{
+  "kind": "collectionType",
+  "collectionName": "page_contents",
+  "info": {
+    "singularName": "page-content",
+    "pluralName": "page-contents",
+    "displayName": "Page Content",
+    "description": "Manage content for different pages"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "pageName": {
+      "type": "enumeration",
+      "enum": ["home", "about", "contact", "shop"],
+      "required": true,
+      "unique": true
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "sections": {
+      "type": "dynamiczone",
+      "components": [
+        "sections.hero",
+        "sections.mission",
+        "sections.values",
+        "sections.legacy",
+        "sections.team",
+        "sections.contact-info",
+        "sections.faq",
+        "sections.newsletter"
+      ]
+    },
+    "seo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "meta.seo"
+    },
+    "updatedBy": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "admin::user"
+    },
+    "createdBy": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "admin::user"
+    }
+  }
+}

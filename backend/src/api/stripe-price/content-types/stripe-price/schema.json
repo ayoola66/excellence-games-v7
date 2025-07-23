@@ -1,0 +1,65 @@
+{
+  "kind": "collectionType",
+  "collectionName": "stripe_prices",
+  "info": {
+    "singularName": "stripe-price",
+    "pluralName": "stripe-prices",
+    "displayName": "Stripe Price",
+    "description": "Prices synced with Stripe"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "stripeId": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "product": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::stripe-product.stripe-product",
+      "inversedBy": "prices"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "currency": {
+      "type": "string",
+      "required": true
+    },
+    "unitAmount": {
+      "type": "biginteger",
+      "required": true,
+      "min": 0
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": ["one_time", "recurring"],
+      "required": true
+    },
+    "interval": {
+      "type": "enumeration",
+      "enum": ["day", "week", "month", "year"],
+      "description": "The frequency at which a subscription is billed"
+    },
+    "intervalCount": {
+      "type": "integer",
+      "min": 1,
+      "description": "The number of intervals between subscription billings"
+    },
+    "trialPeriodDays": {
+      "type": "integer",
+      "min": 0
+    },
+    "metadata": {
+      "type": "json"
+    },
+    "nickname": {
+      "type": "string",
+      "description": "A friendly display name for the price"
+    }
+  }
+}

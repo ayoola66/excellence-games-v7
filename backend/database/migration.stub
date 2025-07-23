@@ -1,0 +1,9 @@
+module.exports = {
+  async up({ context: { db } }) {
+    // Add your migration code here
+  },
+
+  async down({ context: { db } }) {
+    // Add your rollback code here
+  },
+}; 

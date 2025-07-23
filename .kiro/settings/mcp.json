@@ -1,0 +1,61 @@
+{
+  "mcpServers": {
+    "fetch": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-fetch"
+      ],
+      "env": {},
+      "disabled": true,
+      "autoApprove": []
+    },
+    "Desktop Commander": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@wonderwhy-er/desktop-commander",
+        "--key",
+        "a0257842-edc0-4c9d-a948-c37122f09469"
+      ],
+      "env": {},
+      "disabled": false,
+      "autoApprove": []
+    },
+    "Github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@smithery-ai/github",
+        "--key",
+        "a0257842-edc0-4c9d-a948-c37122f09469",
+        "--profile",
+        "likely-lemming-FVYm6V"
+      ],
+      "env": {},
+      "disabled": false,
+      "autoApprove": []
+    },
+    "Playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@0.0.22"
+      ],
+      "env": {},
+      "disabled": false,
+      "autoApprove": [
+        "browser_type",
+        "browser_click",
+        "browser_snapshot",
+        "browser_navigate",
+        "browser_take_screenshot",
+        "browser_wait",
+        "browser_console_messages"
+      ]
+    }
+  }
+}

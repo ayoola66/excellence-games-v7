@@ -1,0 +1,20 @@
+{
+  "kind": "collectionType",
+  "collectionName": "user_activities",
+  "info": {
+    "singularName": "user-activity",
+    "pluralName": "user-activities",
+    "displayName": "User Activity",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "activityType": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

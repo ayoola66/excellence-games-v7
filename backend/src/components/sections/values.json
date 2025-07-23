@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_sections_values",
+  "info": {
+    "displayName": "Values",
+    "description": "Core values section"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "values": {
+      "type": "component",
+      "repeatable": true,
+      "component": "elements.value-item",
+      "required": true,
+      "min": 1
+    }
+  }
+}

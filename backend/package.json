@@ -1,0 +1,50 @@
+{
+  "name": "backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Targeted Backend API",
+  "license": "MIT",
+  "author": {
+    "name": "Ayoola Ogunrekun"
+  },
+  "scripts": {
+    "build": "strapi build",
+    "clean-setup": "ts-node scripts/clean-setup.ts",
+    "create-superadmin": "ts-node scripts/link-superadmin.ts",
+    "create:admin": "NODE_ENV=development strapi run scripts/create-platform-admin.js",
+    "develop": "strapi develop",
+    "migrate": "NODE_ENV=development ts-node scripts/run-migrations.ts",
+    "setup": "ts-node scripts/run-setup.ts",
+    "setup-admin": "node scripts/setup-admin.js",
+    "setup:admin": "NODE_ENV=development ts-node scripts/setup-admin.ts",
+    "setup:superadmin": "NODE_ENV=development strapi run scripts/setup-superadmin.js",
+    "start": "strapi start",
+    "strapi": "strapi"
+  },
+  "dependencies": {
+    "@strapi/plugin-i18n": "4.15.0",
+    "@strapi/plugin-users-permissions": "4.15.0",
+    "@strapi/strapi": "^4.15.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/uuid": "^10.0.0",
+    "ajv": "^8.17.1",
+    "bcryptjs": "^3.0.2",
+    "knex": "^3.1.0",
+    "pg": "^8.11.3",
+    "typescript": "^5.0.4",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@strapi/typescript-utils": "^5.17.0",
+    "@types/node": "^20",
+    "ts-node": "^10.9.2",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=16.0.0 <=20.x.x",
+    "npm": ">=6.0.0"
+  },
+  "strapi": {
+    "uuid": "targeted-backend-api"
+  }
+}

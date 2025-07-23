@@ -1,0 +1,64 @@
+{
+  "kind": "collectionType",
+  "collectionName": "coupons",
+  "info": {
+    "singularName": "coupon",
+    "pluralName": "coupons",
+    "displayName": "Coupon",
+    "description": "Discount coupons"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "code": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": ["PERCENTAGE", "FIXED"],
+      "required": true
+    },
+    "value": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "minPurchase": {
+      "type": "decimal",
+      "min": 0
+    },
+    "maxDiscount": {
+      "type": "decimal",
+      "min": 0
+    },
+    "startDate": {
+      "type": "datetime",
+      "required": true
+    },
+    "endDate": {
+      "type": "datetime",
+      "required": true
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "usageLimit": {
+      "type": "integer",
+      "min": 0
+    },
+    "usageCount": {
+      "type": "integer",
+      "default": 0,
+      "min": 0
+    },
+    "orders": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::order.order"
+    }
+  }
+}

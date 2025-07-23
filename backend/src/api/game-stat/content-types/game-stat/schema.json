@@ -1,0 +1,44 @@
+{
+  "kind": "collectionType",
+  "collectionName": "game_stats",
+  "info": {
+    "singularName": "game-stat",
+    "pluralName": "game-stats",
+    "displayName": "Game Stats"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "gameStats"
+    },
+    "gamesPlayed": {
+      "type": "integer",
+      "default": 0,
+      "min": 0
+    },
+    "timePlayed": {
+      "type": "decimal",
+      "default": 0,
+      "min": 0
+    },
+    "highScore": {
+      "type": "integer",
+      "default": 0,
+      "min": 0
+    },
+    "winRate": {
+      "type": "decimal",
+      "default": 0,
+      "min": 0,
+      "max": 100
+    },
+    "lastGameDate": {
+      "type": "datetime"
+    }
+  }
+}

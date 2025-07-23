@@ -1,0 +1,30 @@
+{
+  "kind": "collectionType",
+  "collectionName": "order_items",
+  "info": {
+    "singularName": "order-item",
+    "pluralName": "order-items",
+    "displayName": "Order Item",
+    "description": "Individual items in an order"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "quantity": {
+      "type": "integer",
+      "required": true,
+      "min": 1
+    },
+    "unitPrice": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "order": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::order.order"
+    }
+  }
+}

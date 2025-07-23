@@ -1,0 +1,65 @@
+{
+  "kind": "collectionType",
+  "collectionName": "games",
+  "info": {
+    "singularName": "game",
+    "pluralName": "games",
+    "displayName": "Game",
+    "description": "Collection of trivia games"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["DRAFT", "PUBLISHED"],
+      "default": "DRAFT",
+      "required": true
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": ["STRAIGHT", "NESTED"],
+      "required": true
+    },
+    "imageUrl": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "isPremium": {
+      "type": "boolean",
+      "default": false
+    },
+    "categories": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::category.category",
+      "mappedBy": "game"
+    },
+    "questions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::question.question",
+      "mappedBy": "game"
+    }
+  },
+  "indexes": [
+    {
+      "name": "games_name_type_unique",
+      "type": "unique",
+      "columns": ["name", "type"]
+    }
+  ]
+}

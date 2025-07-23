@@ -1,0 +1,15 @@
+{
+  "collectionName": "components_quiz_options",
+  "info": {
+    "displayName": "Option",
+    "icon": "bulletList",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "text": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "collectionName": "components_meta_seos",
+  "info": {
+    "displayName": "SEO",
+    "description": "SEO metadata for pages"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text",
+      "required": true
+    },
+    "keywords": {
+      "type": "text"
+    },
+    "robots": {
+      "type": "string",
+      "default": "index, follow"
+    },
+    "canonicalURL": {
+      "type": "string"
+    }
+  }
+}

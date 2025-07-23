@@ -1,0 +1,23 @@
+{
+  "collectionName": "components_elements_value_items",
+  "info": {
+    "displayName": "Value Item",
+    "description": "Individual value item with icon"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text",
+      "required": true
+    },
+    "icon": {
+      "type": "enumeration",
+      "enum": ["excellence", "community", "innovation", "leadership", "growth"],
+      "required": true
+    }
+  }
+}

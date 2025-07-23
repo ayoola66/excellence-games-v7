@@ -1,0 +1,45 @@
+{
+  "kind": "collectionType",
+  "collectionName": "orders",
+  "info": {
+    "singularName": "order",
+    "pluralName": "orders",
+    "displayName": "Order",
+    "description": "User purchase orders"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "orderNumber": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "amount": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "currency": {
+      "type": "string",
+      "required": true,
+      "default": "USD"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["PENDING", "COMPLETED", "FAILED", "REFUNDED"],
+      "required": true,
+      "default": "PENDING"
+    },
+    "paymentMethod": {
+      "type": "string",
+      "required": true
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    }
+  }
+}

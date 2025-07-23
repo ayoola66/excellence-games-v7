@@ -1,0 +1,25 @@
+{
+  "collectionName": "components_sections_legacies",
+  "info": {
+    "displayName": "Legacy",
+    "description": "Legacy section with statistics"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text",
+      "required": true
+    },
+    "stats": {
+      "type": "component",
+      "repeatable": true,
+      "component": "elements.stat-item",
+      "required": true,
+      "min": 1
+    }
+  }
+}

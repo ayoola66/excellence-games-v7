@@ -1,0 +1,58 @@
+{
+  "kind": "collectionType",
+  "collectionName": "stripe_configs",
+  "info": {
+    "singularName": "stripe-config",
+    "pluralName": "stripe-configs",
+    "displayName": "Stripe Configuration",
+    "description": "Stripe account configurations"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "environment": {
+      "type": "enumeration",
+      "enum": ["development", "staging", "production"],
+      "required": true
+    },
+    "secretKey": {
+      "type": "string",
+      "required": true,
+      "private": true
+    },
+    "publishableKey": {
+      "type": "string",
+      "required": true
+    },
+    "webhookSecret": {
+      "type": "string",
+      "required": true,
+      "private": true
+    },
+    "accountId": {
+      "type": "string",
+      "required": true
+    },
+    "defaultCurrency": {
+      "type": "string",
+      "required": true,
+      "default": "GBP"
+    },
+    "metadata": {
+      "type": "json"
+    }
+  }
+}

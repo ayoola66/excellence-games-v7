@@ -1,0 +1,53 @@
+{
+  "kind": "collectionType",
+  "collectionName": "stripe_products",
+  "info": {
+    "singularName": "stripe-product",
+    "pluralName": "stripe-products",
+    "displayName": "Stripe Product",
+    "description": "Products synced with Stripe"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "stripeId": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "metadata": {
+      "type": "json"
+    },
+    "prices": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::stripe-price.stripe-price",
+      "mappedBy": "product"
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": ["one_time", "subscription"],
+      "required": true
+    },
+    "features": {
+      "type": "json",
+      "description": "List of features included in this product"
+    },
+    "sortOrder": {
+      "type": "integer",
+      "default": 0
+    }
+  }
+}

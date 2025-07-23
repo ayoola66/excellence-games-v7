@@ -1,0 +1,70 @@
+{
+  "kind": "collectionType",
+  "collectionName": "stripe_subscriptions",
+  "info": {
+    "singularName": "stripe-subscription",
+    "pluralName": "stripe-subscriptions",
+    "displayName": "Stripe Subscription",
+    "description": "User subscriptions synced with Stripe"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "stripeId": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "price": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::stripe-price.stripe-price"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "incomplete",
+        "incomplete_expired",
+        "trialing",
+        "active",
+        "past_due",
+        "canceled",
+        "unpaid"
+      ],
+      "required": true
+    },
+    "currentPeriodStart": {
+      "type": "datetime",
+      "required": true
+    },
+    "currentPeriodEnd": {
+      "type": "datetime",
+      "required": true
+    },
+    "cancelAtPeriodEnd": {
+      "type": "boolean",
+      "default": false
+    },
+    "canceledAt": {
+      "type": "datetime"
+    },
+    "endedAt": {
+      "type": "datetime"
+    },
+    "trialStart": {
+      "type": "datetime"
+    },
+    "trialEnd": {
+      "type": "datetime"
+    },
+    "metadata": {
+      "type": "json"
+    }
+  }
+}

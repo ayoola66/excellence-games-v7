@@ -1,0 +1,62 @@
+{
+  "kind": "collectionType",
+  "collectionName": "platform_admins",
+  "info": {
+    "singularName": "platform-admin",
+    "pluralName": "platform-admins",
+    "displayName": "Platform Admin",
+    "description": "Platform administrators with elevated privileges"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "firstName": {
+      "type": "string",
+      "required": true
+    },
+    "lastName": {
+      "type": "string",
+      "required": true
+    },
+    "email": {
+      "type": "email",
+      "required": true,
+      "unique": true
+    },
+    "adminRole": {
+      "type": "string",
+      "required": true
+    },
+    "accessLevel": {
+      "type": "integer",
+      "required": true,
+      "min": 1,
+      "max": 10
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true,
+      "required": true
+    },
+    "lastLoginAt": {
+      "type": "datetime"
+    },
+    "lastLogoutAt": {
+      "type": "datetime"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "permissions": {
+      "type": "json"
+    },
+    "refreshToken": {
+      "type": "text",
+      "private": true
+    }
+  }
+}

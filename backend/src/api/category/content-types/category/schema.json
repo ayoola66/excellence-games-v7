@@ -1,0 +1,41 @@
+{
+  "kind": "collectionType",
+  "collectionName": "categories",
+  "info": {
+    "singularName": "category",
+    "pluralName": "categories",
+    "displayName": "Category",
+    "description": "Game categories for nested games"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "cardNumber": {
+      "type": "integer",
+      "required": true,
+      "min": 1,
+      "max": 5
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "game": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::game.game",
+      "inversedBy": "categories"
+    },
+    "questions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::question.question",
+      "mappedBy": "category"
+    }
+  }
+}

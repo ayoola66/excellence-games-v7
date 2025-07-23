@@ -1,0 +1,35 @@
+{
+  "kind": "collectionType",
+  "collectionName": "user_musics",
+  "info": {
+    "singularName": "user-music",
+    "pluralName": "user-musics",
+    "displayName": "User Music",
+    "description": "User uploaded music files"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "file": {
+      "type": "media",
+      "multiple": false,
+      "required": true,
+      "allowedTypes": ["audio"]
+    },
+    "duration": {
+      "type": "decimal",
+      "min": 0
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "music"
+    }
+  }
+}

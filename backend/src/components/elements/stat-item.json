@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_elements_stat_items",
+  "info": {
+    "displayName": "Stat Item",
+    "description": "Individual statistic item"
+  },
+  "options": {},
+  "attributes": {
+    "label": {
+      "type": "string",
+      "required": true
+    },
+    "value": {
+      "type": "string",
+      "required": true
+    },
+    "suffix": {
+      "type": "string"
+    }
+  }
+}

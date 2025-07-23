@@ -1,0 +1,38 @@
+{
+  "kind": "collectionType",
+  "collectionName": "store_items",
+  "info": {
+    "singularName": "store-item",
+    "pluralName": "store-items",
+    "displayName": "Store Item"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text",
+      "required": true
+    },
+    "price": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["active", "inactive"],
+      "default": "active",
+      "required": true
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    }
+  }
+}
