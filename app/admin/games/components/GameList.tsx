@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import adminApi from "@/lib/admin-api-client";
+import { adminApiClient } from "@/lib/admin-api-client";
 import { Game } from "@/types/game";
 
 const GameList = () => {
@@ -25,7 +25,7 @@ const GameList = () => {
   useEffect(() => {
     const fetchGames = async () => {
       try {
-        const response = await adminApi.getGames();
+        const response = await adminApiClient.getGames();
         console.log("Games API response:", response);
 
         // Handle different possible response structures

@@ -66,7 +66,7 @@ class AdminApiClient {
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
   ): Promise<T> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       ...options,
@@ -89,6 +89,10 @@ class AdminApiClient {
     return this.request<DashboardStats>("/dashboard/stats");
   }
 
+  async getGames(): Promise<{ data: Game[] }> {
+    return this.request<{ data: Game[] }>("/games");
+  }
+
   async getPages(): Promise<{ data: PageContent[] }> {
     return this.request<{ data: PageContent[] }>("/pages");
   }
@@ -102,7 +106,7 @@ class AdminApiClient {
 
   async updatePage(
     id: string,
-    data: Partial<CreatePageData>
+    data: Partial<CreatePageData>,
   ): Promise<PageContent> {
     return this.request<PageContent>(`/pages/${id}`, {
       method: "PUT",

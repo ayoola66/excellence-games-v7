@@ -21,7 +21,10 @@
       ],
       "env": {},
       "disabled": false,
-      "autoApprove": []
+      "autoApprove": [
+        "start_process",
+        "read_process_output"
+      ]
     },
     "Github": {
       "command": "npx",

@@ -2,13 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 
 const STRAPI_URL =
   process.env.NEXT_PUBLIC_STRAPI_API_URL || "http://localhost:1337";
+const STRAPI_ADMIN_TOKEN = process.env.STRAPI_ADMIN_TOKEN;
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get("admin_token")?.value;
+    // Check if admin is authenticated via session
+    const sessionToken = request.cookies.get("admin_token")?.value;
 
-    // If no token, return default stats to prevent refresh loop
-    if (!token) {
+    // Use Strapi admin token for backend API calls
+    const token = STRAPI_ADMIN_TOKEN;
+
+    // Check if admin session exists
+    if (!sessionToken) {
       return NextResponse.json(
         {
           totalGames: 0,
@@ -19,6 +24,48 @@ export async function GET(request: NextRequest) {
         },
         { status: 401 },
       );
+    }
+
+    // Get a working admin token
+    let workingToken = token;
+
+    if (!workingToken) {
+      console.log(
+        "No STRAPI_ADMIN_TOKEN, trying to get fresh token via login...",
+      );
+      try {
+        const loginResponse = await fetch(
+          `${STRAPI_URL}/api/admin/auth/local`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              identifier: "superadmin@elitegames.com",
+              password: "Passw0rd",
+            }),
+          },
+        );
+
+        if (loginResponse.ok) {
+          const loginData = await loginResponse.json();
+          workingToken = loginData.token;
+          console.log("✅ Got fresh admin token for stats");
+        } else {
+          throw new Error(`Login failed: ${loginResponse.status}`);
+        }
+      } catch (loginError) {
+        console.error("❌ Failed to get admin token:", loginError);
+        return NextResponse.json(
+          {
+            totalGames: 0,
+            totalUsers: 0,
+            activeGames: 0,
+            totalCategories: 0,
+            error: "Backend authentication failed",
+          },
+          { status: 500 },
+        );
+      }
     }
 
     // Default stats in case of errors
@@ -46,7 +93,7 @@ export async function GET(request: NextRequest) {
       try {
         const gamesResponse = await fetchWithTimeout(
           `${STRAPI_URL}/api/games?pagination[limit]=1`,
-          { headers: { Authorization: `Bearer ${token}` } },
+          { headers: { Authorization: `Bearer ${workingToken}` } },
         );
 
         if (gamesResponse.ok) {
@@ -58,7 +105,7 @@ export async function GET(request: NextRequest) {
           try {
             const activeGamesResponse = await fetchWithTimeout(
               `${STRAPI_URL}/api/games?filters[isActive][$eq]=true&pagination[limit]=1`,
-              { headers: { Authorization: `Bearer ${token}` } },
+              { headers: { Authorization: `Bearer ${workingToken}` } },
             );
 
             if (activeGamesResponse.ok) {
@@ -83,28 +130,52 @@ export async function GET(request: NextRequest) {
         console.warn("Failed to fetch games count:", error);
       }
 
-      // Try to fetch users count
+      // Try to fetch users count from the backend stats endpoint
       try {
-        const usersResponse = await fetchWithTimeout(
-          `${STRAPI_URL}/api/users?pagination[limit]=1`,
-          { headers: { Authorization: `Bearer ${token}` } },
+        const statsResponse = await fetchWithTimeout(
+          `${STRAPI_URL}/api/admin/stats`,
+          { headers: { Authorization: `Bearer ${workingToken}` } },
         );
 
-        if (usersResponse.ok) {
-          const usersData = await usersResponse.json();
-          // Handle both Strapi v4 pagination format and direct array
-          totalUsers =
-            usersData.meta?.pagination?.total || usersData.length || 0;
-          console.log("Users data:", {
-            total: totalUsers,
-            meta: usersData.meta,
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json();
+          totalUsers = statsData.totalUsers || 0;
+          console.log("Backend stats data:", {
+            totalUsers: statsData.totalUsers,
+            totalGames: statsData.totalGames,
+            totalQuestions: statsData.totalQuestions,
+            totalCategories: statsData.totalCategories,
           });
+
+          // Update all stats from backend if available
+          if (statsData.totalGames !== undefined) {
+            totalGames = statsData.totalGames;
+          }
+          if (statsData.totalCategories !== undefined) {
+            totalCategories = statsData.totalCategories;
+          }
         } else {
           console.warn(
-            "Users API failed:",
-            usersResponse.status,
-            await usersResponse.text(),
+            "Backend stats API failed:",
+            statsResponse.status,
+            await statsResponse.text(),
           );
+
+          // Fallback: try direct users endpoint
+          try {
+            const usersResponse = await fetchWithTimeout(
+              `${STRAPI_URL}/api/users-permissions/users?pagination[limit]=1`,
+              { headers: { Authorization: `Bearer ${workingToken}` } },
+            );
+
+            if (usersResponse.ok) {
+              const usersData = await usersResponse.json();
+              totalUsers =
+                usersData.meta?.pagination?.total || usersData.length || 0;
+            }
+          } catch (fallbackError) {
+            console.warn("Fallback users API also failed:", fallbackError);
+          }
         }
       } catch (error) {
         console.warn("Failed to fetch users count:", error);
@@ -114,7 +185,7 @@ export async function GET(request: NextRequest) {
       try {
         const categoriesResponse = await fetchWithTimeout(
           `${STRAPI_URL}/api/categories?pagination[limit]=1`,
-          { headers: { Authorization: `Bearer ${token}` } },
+          { headers: { Authorization: `Bearer ${workingToken}` } },
         );
 
         if (categoriesResponse.ok) {
