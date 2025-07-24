@@ -108,6 +108,13 @@ export async function POST(request: NextRequest) {
     );
 
     // Set cookies with session tracking
+    console.log("Setting admin cookies:", {
+      hasToken: !!token,
+      tokenLength: token?.length,
+      environment: process.env.NODE_ENV,
+      sessionId: session.id,
+    });
+
     response.cookies.set("admin_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
